@@ -21,6 +21,6 @@ app.use((req, res) => {
   return response.error(req, res, "Not found", 404);
 });
 
-app.listen(3000, () =>
+app.listen(PORT, () =>
   console.log("[Server] API running at", `http://localhost:${PORT}`)
 );

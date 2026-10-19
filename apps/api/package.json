@@ -1,10 +1,11 @@
 {
   "name": "api",
   "version": "1.0.0",
-  "description": "",
+  "description": "Haciendola REST API: JWT auth, password reset by one-time code and paginated products over MySQL.",
   "main": "src/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
     "db-init": "node src/scripts/createDatabase.js && node src/seeders/runAllSeeders.js",
     "seeders": "node src/seeders/runAllSeeders.js"
   },
