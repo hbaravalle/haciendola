@@ -28,9 +28,9 @@ export interface Product {
   compare_price: number | null;
   barcode: number | null;
   enabled: boolean | null;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
 }
 
 /** Every success response wraps its payload in `result`. */
