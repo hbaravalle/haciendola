@@ -68,7 +68,7 @@ function NewPassword() {
       }
     };
     checkOtp();
-  }, []);
+  }, [email, userOtp, navigate]);
 
   return (
     <FormLayout>

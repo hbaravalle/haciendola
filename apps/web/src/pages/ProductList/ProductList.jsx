@@ -1,7 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { Eye, Trash, Tag } from "feather-icons-react";
-import { Tooltip } from "react-tooltip";
 import { Modal } from "react-bootstrap";
 import toast from "react-hot-toast";
 import Sidebar from "../../components/Sidebar";
@@ -209,7 +207,7 @@ function ProductList() {
   };
   const handleCloseDeleteModal = () => setDeleteModal({ active: false });
 
-  const fetchProducts = async (page) => {
+  const fetchProducts = useCallback(async (page) => {
     try {
       const response = await fetch(
         `${API_URL}/products?page=${page}`,
@@ -228,13 +226,13 @@ function ProductList() {
     } catch (err) {
       console.log(err);
     }
-  };
+  }, [token]);
 
   const paginateProps = { currentPage, totalPages, handlePageChange };
 
   useEffect(() => {
     fetchProducts(currentPage);
-  }, [currentPage]);
+  }, [currentPage, fetchProducts]);
 
   return (
     <>
@@ -278,6 +276,7 @@ function ProductList() {
                     {products.map((product) => {
                       return (
                         <ProductCard
+                          key={product.id}
                           product={product}
                           handleShowEditModal={handleShowEditModal}
                           handleShowDeleteModal={handleShowDeleteModal}

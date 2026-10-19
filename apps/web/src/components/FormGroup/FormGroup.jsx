@@ -7,7 +7,6 @@ function FormGroup({
   value = "",
   onChange,
   children,
-  size = 100,
 }) {
   return (
     <div className={styles.formGroup}>

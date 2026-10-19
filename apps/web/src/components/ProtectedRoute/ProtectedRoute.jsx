@@ -1,4 +1,4 @@
-import { Routes, Route, Link, Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 
 const ProtectedRoute = ({ user, redirectPath = "/login", children }) => {
   if (!user.token && !user.email) {

@@ -6,7 +6,6 @@ import toast from "react-hot-toast";
 import { login } from "../../redux/authSlice";
 import FormGroup from "../../components/FormGroup";
 import FormLayout from "../../layouts/Form/FormLayout";
-import styles from "./Login.module.scss";
 import { API_URL } from "../../config.js";
 
 function Login() {

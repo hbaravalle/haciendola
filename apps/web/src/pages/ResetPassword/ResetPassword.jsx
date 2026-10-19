@@ -1,6 +1,5 @@
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import FormLayout from "../../layouts/Form/FormLayout";
-import FormGroup from "../../components/FormGroup";
 import SendCodeToEmail from "./steps/SendCodeToEmail";
 import TypeOTP from "./steps/TypeOTP";
 
@@ -11,7 +10,6 @@ function ResetPassword() {
     <FormLayout>
       {!step && <SendCodeToEmail />}
       {step === "otp" && <TypeOTP />}
-      {step === "reset" && <NewPassword />}
     </FormLayout>
   );
 }

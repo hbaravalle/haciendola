@@ -6,7 +6,7 @@ import {
 } from "feather-icons-react";
 import styles from "./Paginate.module.scss";
 
-function Paginate({ handlePageChange, currentPage, totalPages }) {
+function Paginate({ handlePageChange, currentPage }) {
   return (
     <div className={styles.paginate}>
       <button

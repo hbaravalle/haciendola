@@ -5,7 +5,6 @@ import { setOtp } from "../../../../redux/authSlice";
 import toast from "react-hot-toast";
 import { OTP_LENGTH } from "@haciendola/shared";
 import FormGroupOTP from "../../../../components/FormGroupOTP/FormGroupOTP";
-import styles from "./TypeOTP.module.scss";
 import { API_URL } from "../../../../config.js";
 
 function TypeOTPToken() {
@@ -108,7 +107,7 @@ function TypeOTPToken() {
         <button type="submit">Validate code</button>
       </form>
       <small>
-        Didn't get the code? <Link onClick={handleResendEmail}>Resend</Link>
+        Didn&apos;t get the code? <Link onClick={handleResendEmail}>Resend</Link>
       </small>
     </>
   );
