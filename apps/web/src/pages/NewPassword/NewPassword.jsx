@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import FormLayout from "../../layouts/Form/FormLayout";
 import FormGroup from "../../components/FormGroup";
 import { recover, setOtp } from "../../redux/authSlice";
+import { API_URL } from "../../config.js";
 
 function NewPassword() {
   const userOtp = useSelector((state) => state.auth.otp);
@@ -22,7 +23,7 @@ function NewPassword() {
     e.preventDefault();
     try {
       const response = await fetch(
-        "http://localhost:3000/api/auth/reset-password",
+        `${API_URL}/auth/reset-password`,
         {
           method: "POST",
           headers: {
@@ -48,7 +49,7 @@ function NewPassword() {
     const checkOtp = async () => {
       try {
         const response = await fetch(
-          "http://localhost:3000/api/auth/otp-check",
+          `${API_URL}/auth/otp-check`,
           {
             method: "POST",
             headers: {

@@ -4,6 +4,7 @@ import styles from "./Register.module.scss";
 import FormLayout from "../../layouts/Form/FormLayout";
 import FormGroup from "../../components/FormGroup";
 import toast from "react-hot-toast";
+import { API_URL } from "../../config.js";
 
 function Register() {
   const [name, setName] = useState("");
@@ -23,7 +24,7 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:3000/api/auth/register", {
+      const response = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: {
           "Content-type": "application/json",

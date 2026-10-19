@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { OTP_LENGTH } from "@haciendola/shared";
 import FormGroupOTP from "../../../../components/FormGroupOTP/FormGroupOTP";
 import styles from "./TypeOTP.module.scss";
+import { API_URL } from "../../../../config.js";
 
 function TypeOTPToken() {
   const [fullCode, setFullCode] = useState("");
@@ -51,7 +52,7 @@ function TypeOTPToken() {
     e.preventDefault();
     if (fullCode.length !== OTP_LENGTH) return toast.error("Complete the entire code");
     try {
-      const response = await fetch("http://localhost:3000/api/auth/otp-check", {
+      const response = await fetch(`${API_URL}/auth/otp-check`, {
         method: "POST",
         headers: {
           "Content-type": "application/json",
@@ -73,7 +74,7 @@ function TypeOTPToken() {
 
   const handleResendEmail = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/auth/otp", {
+      const response = await fetch(`${API_URL}/auth/otp`, {
         method: "POST",
         headers: {
           "Content-type": "application/json",

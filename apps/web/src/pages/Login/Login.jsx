@@ -7,6 +7,7 @@ import { login } from "../../redux/authSlice";
 import FormGroup from "../../components/FormGroup";
 import FormLayout from "../../layouts/Form/FormLayout";
 import styles from "./Login.module.scss";
+import { API_URL } from "../../config.js";
 
 function Login() {
   const [user, setUser] = useState("");
@@ -20,7 +21,7 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:3000/api/auth/login", {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-type": "application/json",

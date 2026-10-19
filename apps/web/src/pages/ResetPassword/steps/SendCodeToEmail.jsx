@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { login } from "../../../redux/authSlice";
 import FormGroup from "../../../components/FormGroup";
+import { API_URL } from "../../../config.js";
 
 function SendCodeToEmail() {
   const [email, setEmail] = useState("");
@@ -14,7 +15,7 @@ function SendCodeToEmail() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:3000/api/auth/otp", {
+      const response = await fetch(`${API_URL}/auth/otp`, {
         method: "POST",
         headers: {
           "Content-type": "application/json",

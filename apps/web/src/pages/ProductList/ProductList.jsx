@@ -9,6 +9,7 @@ import Paginate from "../../components/Paginate";
 import FormGroup from "../../components/FormGroup";
 import styles from "./ProductList.module.scss";
 import ProductCard from "../../components/Product";
+import { API_URL } from "../../config.js";
 
 function ProductList() {
   const token = useSelector((state) => state.auth.token);
@@ -73,7 +74,7 @@ function ProductList() {
 
   const handleProductCreate = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/products`, {
+      const response = await fetch(`${API_URL}/products`, {
         method: "post",
         headers: {
           "Content-type": "application/json",
@@ -109,7 +110,7 @@ function ProductList() {
   const handleProductDelete = async (sku) => {
     try {
       const response = await fetch(
-        `http://localhost:3000/api/products/${sku}`,
+        `${API_URL}/products/${sku}`,
         {
           method: "delete",
           headers: {
@@ -135,7 +136,7 @@ function ProductList() {
   const handleProductUpdate = async (productData) => {
     try {
       const response = await fetch(
-        `http://localhost:3000/api/products/${productData.sku}`,
+        `${API_URL}/products/${productData.sku}`,
 
         {
           method: "put",
@@ -211,7 +212,7 @@ function ProductList() {
   const fetchProducts = async (page) => {
     try {
       const response = await fetch(
-        `http://localhost:3000/api/products?page=${page}`,
+        `${API_URL}/products?page=${page}`,
         {
           headers: {
             "Content-type": "application/json",
