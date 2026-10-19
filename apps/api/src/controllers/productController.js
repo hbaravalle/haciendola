@@ -1,11 +1,17 @@
 const response = require("../network/response");
-const { Op } = require("sequelize");
 const { Product } = require("../models");
 const {
   PRODUCT_FIELDS,
   NUMERIC_PRODUCT_FIELDS,
   PAGE_SIZE,
 } = require("@haciendola/shared");
+
+// Products are addressed by SKU (digits only) or by handle. Comparing a handle
+// with the numeric SKU column makes MySQL reject updates and deletes, so pick
+// the column from the shape of the value.
+function findBySkuOrHandle(product) {
+  return /^\d+$/.test(product) ? { sku: product } : { handle: product };
+}
 
 async function list(req, res) {
   try {
@@ -49,10 +55,11 @@ async function list(req, res) {
 async function find(req, res) {
   try {
     const product = await Product.findOne({
-      where: {
-        [Op.or]: [{ sku: req.params.product }, { handle: req.params.product }],
-      },
+      where: findBySkuOrHandle(req.params.product),
     });
+    if (!product) {
+      return response.error(req, res, "Product not found", 404);
+    }
     return response.success(req, res, product);
   } catch (err) {
     console.log(err);
@@ -83,9 +90,7 @@ async function create(req, res) {
 async function update(req, res) {
   try {
     const product = await Product.findOne({
-      where: {
-        [Op.or]: [{ sku: req.params.product }, { handle: req.params.product }],
-      },
+      where: findBySkuOrHandle(req.params.product),
     });
     if (!product) {
       return response.error(req, res, "Product not found", 404);
@@ -109,11 +114,12 @@ async function update(req, res) {
 
 async function destroy(req, res) {
   try {
-    const product = await Product.destroy({
-      where: {
-        [Op.or]: [{ sku: req.params.product }, { handle: req.params.product }],
-      },
+    const deleted = await Product.destroy({
+      where: findBySkuOrHandle(req.params.product),
     });
+    if (!deleted) {
+      return response.error(req, res, "Product not found", 404);
+    }
     return response.success(req, res, "Product deleted", 200);
   } catch (err) {
     console.log(err);
