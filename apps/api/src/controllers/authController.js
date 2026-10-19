@@ -6,7 +6,6 @@ const optGenerator = require("otp-generator");
 const { User } = require("../models");
 
 const jwt = require("jsonwebtoken");
-const { MailtrapClient } = require("mailtrap");
 
 async function login(req, res) {
   try {
@@ -94,35 +93,6 @@ async function checkOTP(req, res) {
     } else {
       return response.error(req, res, "Invalid code", 401);
     }
-  } catch (err) {
-    console.log(err);
-    return response.error(req, res);
-  }
-}
-
-async function __sendOTP(req, res) {
-  const otp = optGenerator.generate(6, {
-    lowerCaseAlphabets: false,
-    upperCaseAlphabets: true,
-    specialChars: false,
-  });
-  const email = req.body.email;
-
-  try {
-    const user = await User.findOne({
-      where: {
-        email: email,
-      },
-    });
-    if (!user) return response.error(req, res, "Email not found", 404);
-    const client = new MailtrapClient({ token: "484063a0e1bada" });
-    await client.send({
-      from: { email: process.env.NODEMAILER_FROM },
-      to: [{ email: email }],
-      subject: "Password reset",
-      text: `Your OTP code to reset your password is: ${otp}.\nIf you did not request this code, please ignore this email.`,
-    });
-    console.log("OK OK OK OK");
   } catch (err) {
     console.log(err);
     return response.error(req, res);
