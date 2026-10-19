@@ -1,0 +1,65 @@
+@import "../../scss/variables.scss";
+
+.mainWrapper {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.875rem;
+}
+
+.formLayout {
+  max-width: 400px;
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: $border-radius;
+
+  p {
+    font-size: 0.75rem;
+    text-align: center;
+  }
+
+  &__logo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1.5rem;
+
+    img {
+      max-width: 150px;
+    }
+  }
+
+  form {
+    margin: 2rem 0;
+  }
+
+  button {
+    display: inline-block;
+    width: 100%;
+    border-radius: $border-radius;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    border: none;
+
+    &[type="submit"] {
+      background-color: $color-accent-alternative;
+      color: white;
+    }
+
+    &:disabled {
+      background-color: #999;
+    }
+  }
+
+  small {
+    font-size: 0.875rem;
+
+    &.forgot {
+      display: inline-block;
+      width: 100%;
+      text-align: right;
+    }
+  }
+}

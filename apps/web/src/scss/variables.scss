@@ -1,0 +1,17 @@
+$color-primary: rgba(5, 11, 63, 1);
+$color-secondary: #eef1f6;
+$color-accent: rgba(255, 13, 88, 1);
+$color-accent-alternative: rgb(44, 39, 193);
+$color-gradient: linear-gradient(
+  90deg,
+  rgb(44, 39, 193) 0%,
+  rgba(255, 13, 88, 1) 100%
+);
+$color-gradient-inverse: linear-gradient(
+  90deg,
+  rgba(255, 13, 88, 1) 0%,
+  rgba(44, 39, 193, 1) 100%
+);
+$color-border: #d6dde3;
+
+$border-radius: 0.25rem;

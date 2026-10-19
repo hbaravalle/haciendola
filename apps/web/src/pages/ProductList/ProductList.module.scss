@@ -1,0 +1,85 @@
+@import "../../scss/variables.scss";
+
+.mainWrapper {
+  display: flex;
+}
+
+.table {
+  width: 100%;
+  border-radius: $border-radius;
+  overflow: hidden;
+  background-color: white;
+  font-size: 0.75rem;
+  margin-bottom: 0.75rem;
+
+  td,
+  th {
+    padding: 0.75rem 1rem;
+  }
+
+  &__actions {
+    display: flex;
+  }
+
+  &__actionButton {
+    background: none;
+    border: none;
+  }
+
+  &__info {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.875rem;
+  }
+}
+
+.button {
+  &__save {
+    display: inline-block;
+    width: 100%;
+    border-radius: $border-radius;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    background-color: $color-accent-alternative;
+    color: white;
+    border: none;
+  }
+
+  &__close {
+    display: inline-block;
+    width: 100%;
+    border-radius: $border-radius;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    background-color: lighten($color-accent-alternative, 50%);
+    color: $color-accent-alternative;
+    border: none;
+  }
+
+  &__delete {
+    display: inline-block;
+    width: 100%;
+    border-radius: $border-radius;
+    padding: 0.5rem 0.1rem;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    background-color: $color-accent;
+    color: white;
+    border: none;
+  }
+
+  &__create {
+    display: inline-block;
+    border-radius: $border-radius;
+    padding: 0.4rem 0.8rem;
+    margin-top: -1.1rem;
+    font-size: 0.875rem;
+    background-color: $color-accent-alternative;
+    color: white;
+    border: none;
+  }
+}
