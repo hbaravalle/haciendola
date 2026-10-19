@@ -1,0 +1,26 @@
+{
+  "name": "haciendola",
+  "private": true,
+  "description": "Product catalog admin: React + Redux Toolkit front end and Express + MySQL API in one pnpm workspace.",
+  "packageManager": "pnpm@10.18.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter web --filter api dev",
+    "dev:web": "pnpm --filter web dev",
+    "dev:api": "pnpm --filter api dev",
+    "build": "pnpm --filter web build",
+    "lint": "pnpm --filter web lint",
+    "db:init": "pnpm --filter api db-init",
+    "seed": "pnpm --filter api seeders"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ],
+    "ignoredBuiltDependencies": [
+      "@parcel/watcher"
+    ]
+  }
+}

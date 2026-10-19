@@ -1,0 +1,45 @@
+# Single ignore file for the whole workspace; patterns apply to every app and package.
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+dist-ssr/
+*.tsbuildinfo
+
+# Environment variables: ignore every .env variant, keep the documented templates
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Tooling caches and test output
+.eslintcache
+.stylelintcache
+coverage/
+*.lcov
+
+# Deployment
+.vercel/
+
+# Editors
+**/.vscode/*
+!**/.vscode/extensions.json
+.idea/
+*.sw?
+
+# Claude Code local settings (personal, not shared)
+.claude/settings.local.json
+
+# OS
+.DS_Store
+Thumbs.db
