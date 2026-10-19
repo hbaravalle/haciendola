@@ -4,7 +4,7 @@
   "description": "Product catalog admin: React + Redux Toolkit front end and Express + MySQL API in one pnpm workspace.",
   "packageManager": "pnpm@10.18.0",
   "engines": {
-    "node": ">=20"
+    "node": ">=20.19"
   },
   "scripts": {
     "dev": "pnpm --parallel --filter web --filter api dev",

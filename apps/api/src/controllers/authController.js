@@ -3,6 +3,7 @@ const userService = require("../services/userService");
 const nodemailer = require("nodemailer");
 
 const optGenerator = require("otp-generator");
+const { OTP_LENGTH } = require("@haciendola/shared");
 const { User } = require("../models");
 
 const jwt = require("jsonwebtoken");
@@ -37,7 +38,7 @@ async function register(req, res) {
 }
 
 async function sendOTP(req, res) {
-  const otp = optGenerator.generate(6, {
+  const otp = optGenerator.generate(OTP_LENGTH, {
     lowerCaseAlphabets: false,
     upperCaseAlphabets: true,
     specialChars: false,

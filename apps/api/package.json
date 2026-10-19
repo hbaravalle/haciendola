@@ -21,6 +21,10 @@
     "mysql2": "^3.9.7",
     "nodemailer": "^6.9.13",
     "otp-generator": "^4.0.1",
-    "sequelize": "^6.37.3"
+    "sequelize": "^6.37.3",
+    "@haciendola/shared": "workspace:*"
+  },
+  "engines": {
+    "node": ">=20.19"
   }
 }

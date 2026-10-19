@@ -1,11 +1,15 @@
 const response = require("../network/response");
 const { Op } = require("sequelize");
 const { Product } = require("../models");
-const path = require("path");
+const {
+  PRODUCT_FIELDS,
+  NUMERIC_PRODUCT_FIELDS,
+  PAGE_SIZE,
+} = require("@haciendola/shared");
 
 async function list(req, res) {
   try {
-    const limit = 10;
+    const limit = PAGE_SIZE;
     const { page = 1 } = req.query;
     const pageNumber = Number(page);
     const offset = (pageNumber - 1) * limit;
@@ -59,17 +63,16 @@ async function find(req, res) {
 async function create(req, res) {
   try {
     console.log(req.body);
-    const newProduct = await Product.create({
-      handle: req.body.handle,
-      title: req.body.title,
-      description: req.body.description,
-      sku: Number(req.body.sku),
-      grams: Number(req.body.grams),
-      stock: Number(req.body.stock),
-      price: Number(req.body.price),
-      compare_price: Number(req.body.compare_price),
-      barcode: Number(req.body.barcode),
-    });
+    const newProduct = await Product.create(
+      Object.fromEntries(
+        PRODUCT_FIELDS.map((field) => [
+          field,
+          NUMERIC_PRODUCT_FIELDS.includes(field)
+            ? Number(req.body[field])
+            : req.body[field],
+        ])
+      )
+    );
     return response.success(req, res, "Product created", 201);
   } catch (err) {
     console.log(err);
@@ -79,17 +82,6 @@ async function create(req, res) {
 
 async function update(req, res) {
   try {
-    const {
-      handle,
-      title,
-      description,
-      sku,
-      grams,
-      stock,
-      price,
-      compare_price,
-      barcode,
-    } = req.body;
     const product = await Product.findOne({
       where: {
         [Op.or]: [{ sku: req.params.product }, { handle: req.params.product }],
@@ -99,22 +91,11 @@ async function update(req, res) {
       return response.error(req, res, "Product not found", 404);
     }
 
-    const fields = {
-      handle,
-      title,
-      description,
-      sku,
-      grams,
-      stock,
-      price,
-      compare_price,
-      barcode,
-    };
+    // Only the fields the request sends are updated
     const updates = {};
-
-    for (const [key, value] of Object.entries(fields)) {
-      if (value !== undefined) {
-        updates[key] = value;
+    for (const field of PRODUCT_FIELDS) {
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
       }
     }
 

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { setOtp } from "../../../../redux/authSlice";
 import toast from "react-hot-toast";
+import { OTP_LENGTH } from "@haciendola/shared";
 import FormGroupOTP from "../../../../components/FormGroupOTP/FormGroupOTP";
 import styles from "./TypeOTP.module.scss";
 
@@ -48,7 +49,7 @@ function TypeOTPToken() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (fullCode.length !== 6) return toast.error("Complete the entire code");
+    if (fullCode.length !== OTP_LENGTH) return toast.error("Complete the entire code");
     try {
       const response = await fetch("http://localhost:3000/api/auth/otp-check", {
         method: "POST",
@@ -100,7 +101,7 @@ function TypeOTPToken() {
       </p>
       <form onSubmit={handleSubmit}>
         <FormGroupOTP
-          title="Type you 6 digits security code"
+          title={`Type your ${OTP_LENGTH}-character security code`}
           {...formGroupOTPProps}
         />
         <button type="submit">Validate code</button>
