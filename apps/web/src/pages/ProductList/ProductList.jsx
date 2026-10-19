@@ -152,7 +152,7 @@ function ProductList() {
             grams,
             stock,
             price,
-            comparePrice,
+            compare_price: comparePrice,
           }),
         }
       );
