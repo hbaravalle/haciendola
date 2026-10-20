@@ -1,7 +1,7 @@
 {
   "name": "haciendola",
   "private": true,
-  "description": "Product catalog admin: React + Redux Toolkit front end and Express + MySQL API in one pnpm workspace.",
+  "description": "Product catalog admin: React + Redux Toolkit front end and Express + PostgreSQL API in one pnpm workspace.",
   "packageManager": "pnpm@10.18.0",
   "engines": {
     "node": ">=20.19"
@@ -13,6 +13,7 @@
     "build": "pnpm --filter web build",
     "lint": "pnpm --filter web lint",
     "db:init": "pnpm --filter api db-init",
+    "db:app-role": "pnpm --filter api db-app-role",
     "seed": "pnpm --filter api seeders"
   },
   "pnpm": {
