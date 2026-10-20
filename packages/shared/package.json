@@ -2,7 +2,7 @@
   "name": "@haciendola/shared",
   "version": "1.0.0",
   "private": true,
-  "description": "Product domain values and types shared by the Haciendola web app and API.",
+  "description": "Product domain values and types shared by the Haciéndola web app and API.",
   "type": "module",
   "main": "./index.js",
   "types": "./index.d.ts",

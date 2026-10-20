@@ -1,6 +1,6 @@
-# Haciendola — Web app
+# Haciéndola — Web app
 
-React 18 front end for Haciendola: a one-click demo or a passwordless login with a code sent by email, and a paginated product catalog in two columns, with loading skeletons and modals to create, edit and delete products.
+React 18 front end for Haciéndola: a one-click demo or a passwordless login with a code sent by email, and a paginated product catalog in two columns, with loading skeletons and modals to create, edit and delete products.
 
 See the [main README](../../README.md) for the full project, architecture and setup.
 

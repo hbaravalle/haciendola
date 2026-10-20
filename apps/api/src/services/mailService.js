@@ -15,12 +15,12 @@ async function sendLoginCode(email, code, minutesValid) {
   const { error } = await resend.emails.send({
     from: process.env.MAIL_FROM,
     to: email,
-    subject: `${code} is your Haciendola login code`,
+    subject: `${code} is your Haciéndola login code`,
     text:
-      `Your Haciendola login code is ${code}.\n` +
+      `Your Haciéndola login code is ${code}.\n` +
       `It expires in ${minutesValid} minutes and works once.\n\n` +
       "If you didn't try to log in, you can ignore this email.\n\n" +
-      "Haciendola is a demo project. Your email is only used to sign you in: " +
+      "Haciéndola is a demo project. Your email is only used to sign you in: " +
       "no newsletters, no ads, and it's never shared.",
   });
   if (error) {

@@ -1,8 +1,8 @@
-![Haciendola Product Manager](https://github.com/hbaravalle/backend-haciendola-challenge/assets/24690415/43f3f53c-3178-470e-8103-b52938d38821)
+![Haciéndola Product Manager](https://github.com/hbaravalle/backend-haciendola-challenge/assets/24690415/43f3f53c-3178-470e-8103-b52938d38821)
 
-# Haciendola — Product Manager
+# Haciéndola — Product Manager
 
-A product catalog admin for an online store: try it in one click with a shared demo account, or log in with a code sent by email to get your own copy of the catalog for 24 hours, then browse, create, edit or delete products. The React front end and the Express API live together in one pnpm workspace. Built as my solution to the **Haciendola Full Stack Challenge**.
+A product catalog admin for an online store: try it in one click with a shared demo account, or log in with a code sent by email to get your own copy of the catalog for 24 hours, then browse, create, edit or delete products. The React front end and the Express API live together in one pnpm workspace. Built as my solution to the **Haciéndola Full Stack Challenge**.
 
 **Live demo:** [haciendola-web.vercel.app](https://haciendola-web.vercel.app)
 
