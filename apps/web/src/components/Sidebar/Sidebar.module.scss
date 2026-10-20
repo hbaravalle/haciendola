@@ -6,58 +6,98 @@
   flex-direction: column;
   justify-content: space-between;
   height: 100vh;
-  width: 200px;
+  width: $sidebar-width;
   border-right: 1px solid $color-border;
-  padding: 1rem;
-  background-color: #eef1f6;
+  padding: 1.75rem 1rem 1.25rem;
+  background-color: $color-secondary;
 
   &__logo {
-    max-width: 90%;
+    max-width: 130px;
+    margin-left: 0.75rem;
   }
 
   &__nav {
-    margin-top: 2rem;
+    margin-top: 2.5rem;
   }
 
   &__list {
     list-style: none;
     padding: 0;
+    margin: 0;
   }
 
   &__itemTitle {
     text-transform: uppercase;
     font-size: 0.7rem;
-    letter-spacing: 0.1rem;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
+    letter-spacing: 0.08em;
+    margin: 0 0 0.5rem 0.75rem;
+    font-weight: 600;
+    color: $color-text-muted;
   }
 
-  &__item {
-    & > *,
-    a {
-      display: flex;
-      align-items: center;
-      width: 100%;
-      padding: 0.5rem 1rem;
-      color: black;
-      text-decoration: none;
-      font-size: 0.9rem;
-      border-radius: $border-radius;
-      color: #555;
-      font-weight: 400;
+  &__item a {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border-radius: $border-radius;
+    color: $color-text;
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
 
-      &:hover {
-        background-color: lighten($color-accent, 30%);
-        color: $color-accent;
-      }
+    &:hover {
+      background-color: white;
+      color: $color-primary;
+    }
+
+    &[aria-current="page"] {
+      background-color: white;
+      color: $color-primary;
+      font-weight: 600;
+      box-shadow: 0 1px 2px rgba(5, 11, 63, 0.06);
     }
   }
 
+  &__account {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    margin: 0 0.75rem 0.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid $color-border;
+    font-size: 0.75rem;
+    color: $color-text-muted;
+
+    strong {
+      color: $color-primary;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  // Logging out is a secondary action, so it stays quiet until hovered.
   &__button--submit {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
     border: none;
-    background-color: $color-accent;
-    color: white;
-    padding: 0.5rem 1rem;
+    background: none;
+    color: $color-text;
+    padding: 0.5rem 0.75rem;
     border-radius: $border-radius;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+
+    &:hover {
+      background-color: white;
+      color: $color-accent;
+    }
   }
 }

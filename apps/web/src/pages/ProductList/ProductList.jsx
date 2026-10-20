@@ -1,213 +1,98 @@
-import { useCallback, useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { Modal } from "react-bootstrap";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
+import { Plus } from "feather-icons-react";
+import { PAGE_SIZE } from "@haciendola/shared";
 import Sidebar from "../../components/Sidebar";
 import Paginate from "../../components/Paginate";
-import FormGroup from "../../components/FormGroup";
+import ProductFormModal from "../../components/ProductFormModal/ProductFormModal";
+import DeleteProductModal from "../../components/ProductFormModal/DeleteProductModal";
 import styles from "./ProductList.module.scss";
 import ProductCard from "../../components/Product";
+import ProductCardSkeleton from "../../components/Product/ProductCardSkeleton";
 import { API_URL } from "../../config.js";
+import { logout } from "../../redux/authSlice";
 
 function ProductList() {
   const token = useSelector((state) => state.auth.token);
+  const dispatch = useDispatch();
   const [products, setProducts] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
+  const [loadingPage, setLoadingPage] = useState(false);
+  const [showSkeleton, setShowSkeleton] = useState(false);
+  const latestRequest = useRef(0);
 
-  const [title, setTitle] = useState("");
-  const [handle, setHandle] = useState("");
-  const [description, setDescription] = useState("");
-  const [sku, setSku] = useState("");
-  const [barcode, setBarcode] = useState("");
-  const [grams, setGrams] = useState("");
-  const [stock, setStock] = useState("");
-  const [price, setPrice] = useState("");
-  const [comparePrice, setComparePrice] = useState("");
+  // Product being edited (or null), and whether the create form is open.
+  const [editing, setEditing] = useState(null);
+  const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState(null);
 
-  const [newTitle, setNewTitle] = useState("");
-  const [newHandle, setNewHandle] = useState("");
-  const [newDescription, setNewDescription] = useState("");
-  const [newSku, setNewSku] = useState("");
-  const [newBarcode, setNewBarcode] = useState("");
-  const [newGrams, setNewGrams] = useState("");
-  const [newStock, setNewStock] = useState("");
-  const [newPrice, setNewPrice] = useState("");
-  const [newComparePrice, setNewComparePrice] = useState("");
-
-  const [createModal, setCreateModal] = useState(false);
-
-  const [editModal, setEditModal] = useState({
-    active: false,
-  });
-
-  const [deleteModal, setDeleteModal] = useState({
-    active: false,
-  });
-
-  const handleNewTitleChange = (e) => setNewTitle(e.target.value);
-  const handleNewHandleChange = (e) => {
-    setNewHandle(e.target.value);
-  };
-  const handleNewDescriptionChange = (e) => {
-    setNewDescription(e.target.value);
-  };
-  const handleNewSkuChange = (e) => setNewSku(e.target.value);
-  const handleNewBarcodeChange = (e) => setNewBarcode(e.target.value);
-  const handleNewGramsChange = (e) => setNewGrams(e.target.value);
-  const handleNewStockChange = (e) => setNewStock(e.target.value);
-  const handleNewPriceChange = (e) => setNewPrice(e.target.value);
-  const handleNewComparePriceChange = (e) => setNewComparePrice(e.target.value);
-
-  const handleTitleChange = (e) => setTitle(e.target.value);
-  const handleHandleChange = (e) => setHandle(e.target.value);
-  const handleDescriptionChange = (e) => setDescription(e.target.value);
-  const handleSkuChange = (e) => setSku(e.target.value);
-  const handleBarcodeChange = (e) => setBarcode(e.target.value);
-  const handleGramsChange = (e) => setGrams(e.target.value);
-  const handleStockChange = (e) => setStock(e.target.value);
-  const handlePriceChange = (e) => setPrice(e.target.value);
-  const handleComparePriceChange = (e) => setComparePrice(e.target.value);
-
-  const handleProductCreate = async () => {
+  // Sends a product request and tells the user how it went. Returns true when
+  // it worked, so the modal knows whether to close.
+  const sendProduct = async (method, path, body, successMessage) => {
     try {
-      const response = await fetch(`${API_URL}/products`, {
-        method: "post",
+      const response = await fetch(`${API_URL}/products${path}`, {
+        method,
         headers: {
           "Content-type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          title: newTitle,
-          handle: newHandle,
-          description: newDescription,
-          sku: newSku,
-          barcode: newBarcode,
-          grams: newGrams,
-          stock: newStock,
-          price: newPrice,
-          compare_price: newComparePrice,
-        }),
+        body: body && JSON.stringify(body),
       });
       const data = await response.json();
-      if (data.status === 500 || data.status === 404) {
-        toast.error("Failed to create product");
-      }
-      if (data.status === 201) {
-        toast.success("Product created");
+      if (data.status >= 200 && data.status < 300) {
+        toast.success(successMessage);
         fetchProducts(currentPage);
-        handleCloseCreateModal();
+        return true;
       }
+      if (data.status === 401) {
+        toast("Your session ended. Sign in again", { icon: "👋" });
+        dispatch(logout());
+        return false;
+      }
+      toast.error(data.message ?? "Something went wrong. Try again");
     } catch (err) {
       console.log(err);
       toast.error("Server error. Try again");
     }
+    return false;
   };
 
-  const handleProductDelete = async (sku) => {
-    try {
-      const response = await fetch(
-        `${API_URL}/products/${sku}`,
-        {
-          method: "delete",
-          headers: {
-            "Content-type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      const data = await response.json();
-      if (data.status === 500 || data.status === 404) {
-        toast.error("Update error");
-      }
-      if (data.status === 200) {
-        toast.success("Product deleted");
-        fetchProducts(currentPage);
-        handleCloseDeleteModal();
-      }
-    } catch (err) {
-      console.log(err);
-    }
+  const handleProductCreate = async (values) => {
+    const created = await sendProduct("post", "", values, "Product created");
+    if (created) setCreating(false);
+    return created;
   };
 
-  const handleProductUpdate = async (productData) => {
-    try {
-      const response = await fetch(
-        `${API_URL}/products/${productData.sku}`,
+  const handleProductUpdate = async (values) => {
+    const updated = await sendProduct("put", `/${editing.sku}`, values, "Product updated");
+    if (updated) setEditing(null);
+    return updated;
+  };
 
-        {
-          method: "put",
-          headers: {
-            "Content-type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            title,
-            handle,
-            description,
-            sku,
-            barcode,
-            grams,
-            stock,
-            price,
-            compare_price: comparePrice,
-          }),
-        }
-      );
-      const data = await response.json();
-      if (data.status === 500 || data.status === 404) {
-        toast.error("Update error");
-      }
-      if (data.status === 200) {
-        toast.success("Product updated");
-        fetchProducts(currentPage);
-        handleCloseEditModal();
-      }
-    } catch (err) {
-      console.log(err);
-    }
+  const handleProductDelete = async (product) => {
+    const deleted = await sendProduct("delete", `/${product.sku}`, null, "Product deleted");
+    if (deleted) setDeleting(null);
+    return deleted;
   };
 
   const handlePageChange = (page) => {
     if (page < 1 || page > totalPages) return;
     setCurrentPage(page);
+    window.scrollTo({ top: 0 });
   };
 
-  const handleCloseCreateModal = () => {
-    setNewTitle("");
-    setNewHandle("");
-    setNewDescription("");
-    setNewSku("");
-    setNewBarcode("");
-    setNewGrams("");
-    setNewStock("");
-    setNewPrice("");
-    setNewComparePrice("");
-    setCreateModal(false);
-  };
-  const handleShowCreateModal = () => setCreateModal(true);
+  const handleShowCreateModal = () => setCreating(true);
+  const handleShowEditModal = (product) => setEditing(product);
+  const handleShowDeleteModal = (product) => setDeleting(product);
 
-  const handleShowEditModal = (product) => {
-    setTitle(product.title);
-    setHandle(product.handle);
-    setDescription(product.description);
-    setSku(product.sku);
-    setBarcode(product.barcode);
-    setGrams(product.grams);
-    setStock(product.stock);
-    setPrice(product.price);
-    setComparePrice(product.compare_price);
-    setEditModal({ active: true, ...product });
-  };
-  const handleCloseEditModal = () => setEditModal({ active: false });
-
-  const handleShowDeleteModal = (product) => {
-    setDeleteModal({ active: true, ...product });
-  };
-  const handleCloseDeleteModal = () => setDeleteModal({ active: false });
-
-  const fetchProducts = useCallback(async (page) => {
+  // `showLoading` is set when the page changes (or on first load) so the grid
+  // shows skeletons; refreshing after an edit keeps the current cards.
+  const fetchProducts = useCallback(async (page, { showLoading = false } = {}) => {
+    const request = ++latestRequest.current;
+    if (showLoading) setLoadingPage(true);
     try {
       const response = await fetch(
         `${API_URL}/products?page=${page}`,
@@ -218,297 +103,131 @@ function ProductList() {
           },
         }
       );
-      const { result: data } = await response.json();
+      const { status, result: data } = await response.json();
+      // A newer page was asked for while this one loaded.
+      if (request !== latestRequest.current) return;
+
+      // Deleting the only product of the last page leaves that page empty, so
+      // step back to the one before it.
+      if (status === 404 && page > 1) {
+        setCurrentPage(page - 1);
+        return;
+      }
+      // The session ended, usually because the 24-hour account was deleted.
+      if (status === 401) {
+        toast("Your session ended. Sign in again", { icon: "👋" });
+        dispatch(logout());
+        return;
+      }
+      if (status !== 200) {
+        toast.error("Could not load the products");
+        return;
+      }
 
       setProducts(data.products);
       setTotalPages(data.totalPages);
       setTotalProducts(data.count);
     } catch (err) {
       console.log(err);
+    } finally {
+      if (request === latestRequest.current) setLoadingPage(false);
     }
-  }, [token]);
+  }, [token, dispatch]);
 
   const paginateProps = { currentPage, totalPages, handlePageChange };
+  const firstShown = totalProducts ? (currentPage - 1) * PAGE_SIZE + 1 : 0;
+  const lastShown = Math.min(currentPage * PAGE_SIZE, totalProducts);
 
   useEffect(() => {
-    fetchProducts(currentPage);
+    fetchProducts(currentPage, { showLoading: true });
   }, [currentPage, fetchProducts]);
+
+  // Skeletons only appear if the page takes more than a moment, so fast
+  // responses don't flash them.
+  useEffect(() => {
+    if (!loadingPage) {
+      setShowSkeleton(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowSkeleton(true), 150);
+    return () => clearTimeout(timer);
+  }, [loadingPage]);
+
+  // As many skeletons as products the page will hold, when that's known.
+  const skeletonCount = totalProducts
+    ? Math.min(PAGE_SIZE, totalProducts - (currentPage - 1) * PAGE_SIZE)
+    : PAGE_SIZE;
 
   return (
     <>
       <div className={styles.mainWrapper}>
         <Sidebar />
-        <main>
-          <div className="container-fluid" style={{ paddingLeft: "200px" }}>
-            <div className="row">
-              <div className="col-12">
-                <header
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <h1>Productos</h1>
-                  <button
-                    className={styles.button__create}
-                    onClick={handleShowCreateModal}
-                  >
-                    + Nuevo
-                  </button>
-                </header>
-                {products && (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      padding: "1rem 0",
-                      gap: "1rem",
-                    }}
-                  >
-                    <div className={styles.table__info}>
-                      <small>
-                        {totalProducts} resultados <b>·</b> Mostrando{" "}
-                        {currentPage} de {totalPages} páginas
-                      </small>
-                      <Paginate {...paginateProps} />
-                    </div>
-                    {products.map((product) => {
-                      return (
-                        <ProductCard
-                          key={product.id}
-                          product={product}
-                          handleShowEditModal={handleShowEditModal}
-                          handleShowDeleteModal={handleShowDeleteModal}
-                        />
-                      );
-                    })}
-
-                    <div className={styles.table__info}>
-                      <small>
-                        {totalProducts} resultados <b>·</b> Mostrando{" "}
-                        {currentPage} de {totalPages} páginas
-                      </small>
-                      <Paginate {...paginateProps} />
-                    </div>
-                  </div>
-                )}
-              </div>
+        <main className={styles.content}>
+          <header className={styles.header}>
+            <div>
+              <h1 className={styles.header__title}>Products</h1>
+              <p className={styles.header__subtitle}>
+                {products ? `${totalProducts} products in the catalog` : "\u00a0"}
+              </p>
             </div>
-          </div>
+            <button
+              className={styles.button__create}
+              onClick={handleShowCreateModal}
+            >
+              <Plus size="16" /> New product
+            </button>
+          </header>
+          {showSkeleton && (
+            <div className={styles.grid} aria-busy="true" aria-label="Loading products">
+              {Array.from({ length: skeletonCount }, (_, i) => (
+                <ProductCardSkeleton key={i} />
+              ))}
+            </div>
+          )}
+          {!showSkeleton && products && products.length === 0 && (
+            <div className={styles.empty}>
+              <h2>Your catalog is empty</h2>
+              <p>Create a product to get started.</p>
+            </div>
+          )}
+          {products && products.length > 0 && (
+            <>
+              {!showSkeleton && (
+                <div className={styles.grid}>
+                {products.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    handleShowEditModal={handleShowEditModal}
+                    handleShowDeleteModal={handleShowDeleteModal}
+                  />
+                ))}
+                </div>
+              )}
+              <div className={styles.table__info}>
+                <small>
+                  Showing {firstShown}–{lastShown} of {totalProducts}
+                </small>
+                <Paginate {...paginateProps} />
+              </div>
+            </>
+          )}
         </main>
       </div>
-      <Modal show={editModal.active} onHide={handleCloseEditModal}>
-        <form action="" style={{ padding: "1rem", fontSize: "0.875rem" }}>
-          <FormGroup
-            title="Title"
-            name="title"
-            value={title}
-            onChange={handleTitleChange}
-          />
-          <FormGroup
-            title="Handle"
-            name="handle"
-            value={handle}
-            onChange={handleHandleChange}
-          />
-          <FormGroup
-            title="Description"
-            name="description"
-            value={description}
-            type="textarea"
-            onChange={handleDescriptionChange}
-          />
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              columnGap: "1rem",
-            }}
-          >
-            <FormGroup
-              title="SKU"
-              name="sku"
-              value={sku}
-              onChange={handleSkuChange}
-            />
-            <FormGroup
-              title="Barcode"
-              name="barcode"
-              value={barcode}
-              onChange={handleBarcodeChange}
-            />
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              columnGap: "1rem",
-            }}
-          >
-            <FormGroup
-              title="Grams"
-              name="grams"
-              value={grams}
-              onChange={handleGramsChange}
-            />
-            <FormGroup
-              title="Stock"
-              name="stock"
-              value={stock}
-              onChange={handleStockChange}
-            />
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              columnGap: "1rem",
-            }}
-          >
-            <FormGroup
-              title="Price"
-              name="price"
-              value={price}
-              onChange={handlePriceChange}
-            />
-            <FormGroup
-              title="Compare price"
-              name="compare_price"
-              value={comparePrice}
-              onChange={handleComparePriceChange}
-            />
-          </div>
-        </form>
-        <div style={{ padding: "0 1rem 1rem 1rem" }}>
-          <button
-            className={styles.button__save}
-            onClick={() => handleProductUpdate(editModal)}
-          >
-            Save changes
-          </button>
-          <button
-            onClick={handleCloseEditModal}
-            className={styles.button__close}
-          >
-            Close
-          </button>
-        </div>
-      </Modal>
-      <Modal show={createModal} onHide={handleCloseCreateModal}>
-        <form action="" style={{ padding: "1rem", fontSize: "0.875rem" }}>
-          <FormGroup
-            title="Title"
-            name="title"
-            value={newTitle}
-            onChange={handleNewTitleChange}
-          />
-          <FormGroup
-            title="Handle"
-            name="handle"
-            value={newHandle}
-            onChange={handleNewHandleChange}
-          />
-          <FormGroup
-            title="Description"
-            name="description"
-            value={newDescription}
-            type="textarea"
-            onChange={handleNewDescriptionChange}
-          />
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              columnGap: "1rem",
-            }}
-          >
-            <FormGroup
-              title="SKU"
-              name="sku"
-              value={newSku}
-              onChange={handleNewSkuChange}
-            />
-            <FormGroup
-              title="Barcode"
-              name="barcode"
-              value={newBarcode}
-              onChange={handleNewBarcodeChange}
-            />
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              columnGap: "1rem",
-            }}
-          >
-            <FormGroup
-              title="Grams"
-              name="grams"
-              value={newGrams}
-              onChange={handleNewGramsChange}
-            />
-            <FormGroup
-              title="Stock"
-              name="stock"
-              value={newStock}
-              onChange={handleNewStockChange}
-            />
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              columnGap: "1rem",
-            }}
-          >
-            <FormGroup
-              title="Price"
-              name="price"
-              value={newPrice}
-              onChange={handleNewPriceChange}
-            />
-            <FormGroup
-              title="Compare price"
-              name="compare_price"
-              value={newComparePrice}
-              onChange={handleNewComparePriceChange}
-            />
-          </div>
-        </form>
-        <div style={{ padding: "0 1rem 1rem 1rem" }}>
-          <button
-            className={styles.button__save}
-            onClick={() => handleProductCreate()}
-          >
-            Save changes
-          </button>
-          <button
-            onClick={handleCloseCreateModal}
-            className={styles.button__close}
-          >
-            Close
-          </button>
-        </div>
-      </Modal>
-      <Modal show={deleteModal.active} onHide={handleCloseDeleteModal}>
-        <div style={{ padding: "1rem" }}>
-          <p>Are you sure you want to delete this product?</p>
-          <button
-            onClick={handleCloseDeleteModal}
-            className={styles.button__close}
-          >
-            Close
-          </button>
-          <button
-            className={styles.button__delete}
-            onClick={() => handleProductDelete(deleteModal.sku)}
-          >
-            Delete
-          </button>
-        </div>
-      </Modal>
+      <ProductFormModal
+        show={creating || Boolean(editing)}
+        product={editing}
+        onClose={() => {
+          setCreating(false);
+          setEditing(null);
+        }}
+        onSubmit={editing ? handleProductUpdate : handleProductCreate}
+      />
+      <DeleteProductModal
+        product={deleting}
+        onClose={() => setDeleting(null)}
+        onConfirm={handleProductDelete}
+      />
     </>
   );
 }

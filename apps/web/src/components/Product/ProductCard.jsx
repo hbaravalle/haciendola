@@ -1,55 +1,85 @@
 import classNames from "classnames";
 import Dropdown from "react-bootstrap/Dropdown";
-import { MoreVertical } from "feather-icons-react";
+import { Edit2, MoreVertical, Trash2 } from "feather-icons-react";
 import styles from "./ProductCard.module.scss";
 
+const money = new Intl.NumberFormat("en-US");
+const formatPrice = (value) => `$${money.format(value)}`;
+
 function ProductCard({ product, handleShowEditModal, handleShowDeleteModal }) {
+  const outOfStock = !product.stock;
+
   return (
-    <div className={classNames(styles.productCard, "shadow-sm")}>
+    <article className={styles.productCard}>
       <div className={styles.productCard__topSection}>
-        <div className={styles.productCard__id}>#{product?.id}</div>
-        <div className={styles.productCard__stock}>
-          <strong>Stock</strong> {product?.stock}
-        </div>
+        <span className={styles.productCard__id}>#{product.id}</span>
+        <span
+          className={classNames(styles.productCard__stock, {
+            [styles["productCard__stock--out"]]: outOfStock,
+          })}
+        >
+          {outOfStock ? "Out of stock" : `${product.stock} in stock`}
+        </span>
       </div>
-      <div className={styles.ProductCard__centerSection}>
-        <h2 className={styles.productCard__title}>{product.title}</h2>
-        <h3 className={styles.productCard__price}>
-          ${product.price}
-          <span className={styles.productCard__comparePrice}>
-            ${product.compare_price}
-          </span>
-        </h3>
+
+      <div>
+        <h2 className={styles.productCard__title} title={product.title}>
+          {product.title}
+        </h2>
+        <p className={styles.productCard__price}>
+          {formatPrice(product.price)}
+          {product.compare_price != null && (
+            <span className={styles.productCard__comparePrice}>
+              {formatPrice(product.compare_price)}
+            </span>
+          )}
+        </p>
       </div>
+
       <div className={styles.productCard__bottomSection}>
-        <div className={styles.productCard__handle}>
-          <h4>Handle</h4> {product.handle}
-        </div>
-        <div className={styles.productCard__sku}>
-          <h4>SKU</h4> {product.sku}
-        </div>
-        <div className={styles.productCard__barcode}>
-          <h4>Barcode</h4> {product.barcode}
-        </div>
-        <Dropdown>
+        <dl className={styles.productCard__meta}>
+          <div>
+            <dt>Handle</dt>
+            <dd title={product.handle}>{product.handle}</dd>
+          </div>
+          <div>
+            <dt>SKU</dt>
+            <dd>{product.sku}</dd>
+          </div>
+          <div>
+            <dt>Barcode</dt>
+            <dd>{product.barcode ?? "—"}</dd>
+          </div>
+        </dl>
+        <Dropdown align="end">
           <Dropdown.Toggle
             variant="info"
             className={styles.productCard__dropdownButton}
+            aria-label={`Actions for ${product.title}`}
           >
-            <MoreVertical />
+            <MoreVertical size="16" />
           </Dropdown.Toggle>
 
-          <Dropdown.Menu>
-            <Dropdown.Item onClick={() => handleShowEditModal(product)}>
-              Details
+          <Dropdown.Menu className={styles.menu} popperConfig={{ strategy: "fixed" }}>
+            <Dropdown.Item
+              as="button"
+              className={styles.menu__item}
+              onClick={() => handleShowEditModal(product)}
+            >
+              <Edit2 size="14" /> Edit
             </Dropdown.Item>
-            <Dropdown.Item onClick={() => handleShowDeleteModal(product)}>
-              Delete
+            <Dropdown.Divider className={styles.menu__divider} />
+            <Dropdown.Item
+              as="button"
+              className={classNames(styles.menu__item, styles["menu__item--danger"])}
+              onClick={() => handleShowDeleteModal(product)}
+            >
+              <Trash2 size="14" /> Delete
             </Dropdown.Item>
           </Dropdown.Menu>
         </Dropdown>
       </div>
-    </div>
+    </article>
   );
 }
 

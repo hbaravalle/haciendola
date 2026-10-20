@@ -1,0 +1,142 @@
+@import "../../scss/variables.scss";
+
+// Shared by the product form and the delete confirmation.
+.modal {
+  border: none;
+  border-radius: $border-radius-card;
+  box-shadow: 0 12px 40px rgba(5, 11, 63, 0.18);
+  overflow: hidden;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.5rem 1.5rem 1rem;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  &__subtitle {
+    margin: 0.25rem 0 0;
+    font-size: 0.85rem;
+    color: $color-text-muted;
+    // Long product titles stay on one line.
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 40ch;
+
+    &--wrap {
+      white-space: normal;
+      max-width: none;
+    }
+  }
+
+  &__close {
+    display: flex;
+    padding: 0.3rem;
+    border: none;
+    border-radius: $border-radius;
+    background: none;
+    color: $color-text;
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+
+    &:hover {
+      background-color: $color-secondary;
+      color: $color-primary;
+    }
+  }
+
+  &__body {
+    padding: 0 1.5rem;
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid $color-secondary;
+    background-color: lighten($color-secondary, 2%);
+  }
+}
+
+.section {
+  padding: 1rem 0 0.25rem;
+
+  & + & {
+    border-top: 1px solid $color-secondary;
+  }
+
+  &__title {
+    margin-bottom: 0.75rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: $color-text-muted;
+  }
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 1rem;
+
+  @media screen and (max-width: 576px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.button {
+  %base {
+    padding: 0.55rem 1rem;
+    border: none;
+    border-radius: $border-radius;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+  }
+
+  &__primary {
+    @extend %base;
+    background-color: $color-accent-alternative;
+    color: white;
+
+    &:hover:not(:disabled) {
+      background-color: darken($color-accent-alternative, 8%);
+    }
+  }
+
+  &__secondary {
+    @extend %base;
+    background: none;
+    color: $color-text;
+
+    &:hover:not(:disabled) {
+      background-color: $color-secondary;
+      color: $color-primary;
+    }
+  }
+
+  &__danger {
+    @extend %base;
+    background-color: $color-accent;
+    color: white;
+
+    &:hover:not(:disabled) {
+      background-color: darken($color-accent, 8%);
+    }
+  }
+}

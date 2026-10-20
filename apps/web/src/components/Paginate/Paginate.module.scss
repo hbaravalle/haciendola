@@ -2,9 +2,20 @@
 
 .paginate {
   display: flex;
+  align-items: center;
   gap: 0.5rem;
 
+  &__current {
+    min-width: 4.5rem;
+    text-align: center;
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+  }
+
   &__button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 2rem;
     background-color: transparent;
     border: 1px solid $color-border;
@@ -15,9 +26,14 @@
     transition: color 0.1s ease-in-out, border 0.1s ease-in-out;
     aspect-ratio: 1 / 1;
 
-    &:hover {
+    &:hover:not(:disabled) {
       color: $color-accent;
       border: 1px solid darken($color-border, 5%);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: default;
     }
   }
 }
