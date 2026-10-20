@@ -1,5 +1,5 @@
 import { Product } from "../models/index.js";
-import productListJSON from "../seeders/products.json" with { type: "json" };
+import productListJSON from "../data/products.json" with { type: "json" };
 
 // The challenge's catalog, with its Shopify-style column names ("Compare
 // Price") turned into the model's fields (compare_price).

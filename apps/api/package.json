@@ -7,8 +7,7 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "db-init": "node src/seeders/runAllSeeders.js",
-    "seeders": "node src/seeders/runAllSeeders.js",
+    "db-init": "node src/scripts/initDatabase.js",
     "db-app-role": "node src/scripts/createAppRole.js"
   },
   "keywords": [],

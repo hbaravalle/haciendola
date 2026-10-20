@@ -6,9 +6,8 @@ See the [main README](../../README.md) for the endpoints, the reasoning behind t
 
 ```bash
 # from the repository root
-pnpm db:init   # create the tables and 3 test users, each with the 263 products
+pnpm db:init   # create the tables (drops them first)
 pnpm dev:api   # http://localhost:3000/api
-pnpm seed      # reset products and users to the seed data
 pnpm db:app-role -- --write-env   # optional: connect with a role that can only read and write rows
 ```
 
@@ -16,7 +15,7 @@ pnpm db:app-role -- --write-env   # optional: connect with a role that can only 
 |---|---|
 | `APP_PORT` | Port the API listens on. Defaults to `3000` |
 | `DATABASE_URL` | Postgres connection string the API uses, e.g. the one Neon shows under **Connect**. SSL is required |
-| `DATABASE_ADMIN_URL` | Optional, local only. Owner connection used only by the seeders and `db:app-role`; the API never reads it, so it doesn't go to Vercel. `pnpm db:app-role -- --write-env` moves the owner here and points `DATABASE_URL` at a role that can only read and write rows |
+| `DATABASE_ADMIN_URL` | Optional, local only. Owner connection used only by `db:init` and `db:app-role`; the API never reads it, so it doesn't go to Vercel. `pnpm db:app-role -- --write-env` moves the owner here and points `DATABASE_URL` at a role that can only read and write rows |
 | `JWT_SECRET` | Secret used to sign the tokens and hash the login codes |
 | `RESEND_API_KEY` | Resend API key. Leave it empty to print login codes in the console instead of emailing them |
 | `MAIL_FROM` | Sender of the login email, e.g. `Haciéndola <login@mail.yourdomain.com>` on a domain verified in Resend, or `onboarding@resend.dev` while testing |

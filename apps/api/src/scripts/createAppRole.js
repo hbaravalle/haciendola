@@ -2,7 +2,7 @@
 // only read and write rows: it can't create or drop tables, create databases
 // or roles, or bypass row security, so a leaked DATABASE_URL can't do more
 // than the API itself. The owner role stays in DATABASE_ADMIN_URL, used only
-// by the seeders, which recreate the tables.
+// by db:init, which recreates the tables.
 //
 // Usage: node src/scripts/createAppRole.js [--write-env]
 // Run it once per Neon branch: roles live in each branch.
@@ -40,7 +40,7 @@ async function createAppRole() {
   await client.query(`grant usage on schema public to ${ROLE}`);
   await client.query(`grant select, insert, update, delete on all tables in schema public to ${ROLE}`);
   await client.query(`grant usage, select on all sequences in schema public to ${ROLE}`);
-  // The seeders drop and recreate the tables as the owner; these keep the
+  // db:init drops and recreates the tables as the owner; these keep the
   // grants on the new tables.
   await client.query(
     `alter default privileges for role ${owner} in schema public grant select, insert, update, delete on tables to ${ROLE}`

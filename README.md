@@ -83,7 +83,7 @@ The API emails a 6-digit code through [Resend](https://resend.com), and typing i
 - **One set of rules, checked twice.** The Zod schemas in the shared package validate every request in the API, and the product form before it's sent, showing each problem under its field.
 - **No barcode, no sale.** A product without a barcode is saved as disabled, and its card says so.
 - **Protected routes.** Every product route needs a valid JWT; only the login routes are public.
-- **A database role that can only touch rows.** The API connects as `haciendola_app`, which can't create or drop tables. The owner connection stays on a developer's machine, for the seeders.
+- **A database role that can only touch rows.** The API connects as `haciendola_app`, which can't create or drop tables. The owner connection stays on a developer's machine, for `db:init`.
 - **Out of search results.** Both apps send `noindex`. `robots.txt` doesn't block crawlers, on purpose: a crawler that can't read a page never sees its `noindex`.
 
 ## ✨ Features
@@ -130,8 +130,8 @@ haciendola/
 │           ├── models/       # User, LoginCode, Product (paranoid, one catalog per user), RateLimit
 │           ├── middlewares/  # JWT error handler, rate limits by IP, base URL for pagination links
 │           ├── network/      # One shape for every success and error response
-│           ├── scripts/      # Create the API's database role
-│           └── seeders/      # 263 seed products, copied into each test user's catalog
+│           ├── scripts/      # Create the tables, and the API's database role
+│           └── data/         # The challenge's 263 products, copied into each new account's catalog
 ├── packages/
 │   └── shared/               # Product fields, page size, login code rules, demo email, Zod schemas and API types
 └── pnpm-workspace.yaml
@@ -189,13 +189,13 @@ pnpm install
 cp apps/api/.env.example apps/api/.env   # database, JWT secret, Resend (optional)
 cp apps/web/.env.example apps/web/.env   # optional: VITE_API_URL
 
-pnpm db:init   # create the tables and load products and test users
+pnpm db:init   # create the tables
 pnpm dev       # API on localhost:3000 and web app on localhost:5173
 ```
 
-Optionally, `pnpm db:app-role -- --write-env` makes the API connect with a role that can only read and write rows, and keeps the owner connection for the seeders.
+Optionally, `pnpm db:app-role -- --write-env` makes the API connect with a role that can only read and write rows, and keeps the owner connection for `db:init`.
 
-**Trying it:** the **Try the demo** button needs nothing else. The test users `leia@`, `luke@` and `han@starwars.com` don't have real inboxes, so log in as them without a Resend key and read the code in the API console, or log in with your own email. Like any account, the test users are deleted 24 hours later; `pnpm seed` brings them back.
+**Trying it:** the database starts empty. **Try the demo** creates the demo account and its catalog the first time, and logging in with any email creates that account; without a Resend key, its code shows up in the API console.
 
 | Script | Description |
 |---|---|
@@ -203,9 +203,8 @@ Optionally, `pnpm db:app-role -- --write-env` makes the API connect with a role 
 | `pnpm dev:web` / `pnpm dev:api` | Run one app |
 | `pnpm build` | Build the web app |
 | `pnpm lint` | Lint the web app |
-| `pnpm db:init` | Create the tables and load the seed data |
+| `pnpm db:init` | Create the tables. It drops them first, so every account and catalog is lost |
 | `pnpm db:app-role` | Create the API's database role on the current branch. Add `-- --write-env` to save it in `.env` |
-| `pnpm seed` | Reset the database to the seed data. Like `db:init`, it drops every table first, so every account and catalog is lost |
 
 ## ▲ Deploying to Vercel
 
@@ -220,7 +219,7 @@ DATABASE_ADMIN_URL="postgresql://neondb_owner:…@…-pooler…/neondb?sslmode=v
 DATABASE_ADMIN_URL="postgresql://neondb_owner:…@…-pooler…/neondb?sslmode=verify-full" pnpm db:app-role
 ```
 
-The second command prints the `haciendola_app` connection string for the API. Run `db:init` only this once: like `pnpm seed`, it drops and recreates the tables.
+The second command prints the `haciendola_app` connection string for the API. Run `db:init` only this once: it drops and recreates the tables.
 
 **2. API project.** New Vercel project from the repo, with **Root Directory** `apps/api` and Node.js 22. `apps/api/vercel.json` routes every request to the function and schedules the cron. Environment variables:
 
