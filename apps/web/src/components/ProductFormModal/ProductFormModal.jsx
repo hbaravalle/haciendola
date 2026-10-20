@@ -7,7 +7,7 @@ import styles from "./ProductFormModal.module.scss";
 
 const emptyProduct = Object.fromEntries(PRODUCT_FIELDS.map((field) => [field, ""]));
 
-// "Glitter Glue 23 g" -> "glitter-glue-23-g", the same shape as the catalog's.
+// "Glitter Glue 23 g" -> "glitter-glue-23-g"
 const toHandle = (title) =>
   title
     .normalize("NFD")
@@ -16,18 +16,16 @@ const toHandle = (title) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-// Creates a product when `product` is null, edits it otherwise. `onSubmit`
-// gets the form values and resolves to true when the API accepted them.
+// Creates if `product` is null, else edits. `onSubmit` resolves to true on success.
 function ProductFormModal({ show, product, onClose, onSubmit }) {
-  // Kept from when the modal opened, so the title doesn't switch to "New
-  // product" while the edit modal fades out.
+  // Kept so the title doesn't flip to "New product" while closing.
   const [openedWith, setOpenedWith] = useState(null);
   const isEdit = Boolean(openedWith);
   const [values, setValues] = useState(emptyProduct);
-  // While creating, the handle follows the title until it's edited by hand.
+  // While creating, the handle follows the title until edited.
   const [handleTouched, setHandleTouched] = useState(false);
   const [saving, setSaving] = useState(false);
-  // Problems found on the last save, by field, e.g. { price: "Price is required" }.
+  // Errors by field from the last save.
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
@@ -43,8 +41,7 @@ function ProductFormModal({ show, product, onClose, onSubmit }) {
     setErrors({});
   }, [show, product]);
 
-  // Editing a field clears its error (and the handle's, when the title fills
-  // it in; the compare-at price's, when the price it's checked against changes).
+  // Editing a field clears its error, plus the ones it affects.
   const clearErrors = (...fields) =>
     setErrors((current) => {
       const next = { ...current };
@@ -67,8 +64,7 @@ function ProductFormModal({ show, product, onClose, onSubmit }) {
     );
   };
 
-  // Checked with the same rules the API applies, so mistakes show next to
-  // their field instead of coming back one at a time from the server.
+  // Same rules as the API, so errors show by field before sending.
   const handleSubmit = async (e) => {
     e.preventDefault();
     const parsed = productSchema.safeParse(values);

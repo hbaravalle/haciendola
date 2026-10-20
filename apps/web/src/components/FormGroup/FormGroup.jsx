@@ -1,10 +1,8 @@
 import classNames from "classnames";
 import styles from "./FormGroup.module.scss";
 
-// A labelled input or textarea. `prefix` and `suffix` show a unit inside the
-// field ($, g), `hint` a short note under it, and `error` a problem with the
-// value, shown in place of the hint. Any other prop (required, min, inputMode,
-// placeholder...) goes straight to the input.
+// Labelled input or textarea. `prefix`/`suffix` show a unit; `error` replaces
+// `hint`. Other props go to the input.
 function FormGroup({
   title,
   name,

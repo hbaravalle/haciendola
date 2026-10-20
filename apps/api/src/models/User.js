@@ -12,8 +12,7 @@ class User extends Model {
         name: {
           type: DataTypes.STRING(100),
         },
-        // The email is the user's identity: the login code is sent there.
-        // Stored lowercased so lookups don't depend on how it was typed.
+        // Stored lowercased; the login code is sent here.
         email: {
           type: DataTypes.STRING(254),
           allowNull: false,
@@ -23,7 +22,7 @@ class User extends Model {
             this.setDataValue("email", String(value).trim().toLowerCase());
           },
         },
-        // When the user's catalog was last filled with the seed products.
+        // Last time the catalog was seeded.
         catalog_seeded_at: {
           type: DataTypes.DATE,
         },

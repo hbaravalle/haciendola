@@ -11,19 +11,16 @@ import * as response from './network/response.js';
 
 const app = express();
 
-// On Vercel the request goes through its proxy, which puts the visitor's IP
-// in X-Forwarded-For. Trusting one hop lets the IP rate limits see it, and
-// staying off locally keeps that header from being spoofed.
+// Trust Vercel's proxy so rate limits see the client IP (off locally: spoofable).
 if (process.env.VERCEL) app.set('trust proxy', 1);
 
-// WEB_ORIGIN (comma-separated) limits which sites can call the API; without
-// it, any origin can, which is what local development needs.
+// Without WEB_ORIGIN any origin is allowed (local dev).
 app.use(
   cors({
     origin: process.env.WEB_ORIGIN ? process.env.WEB_ORIGIN.split(',') : true,
   }),
 );
-// A demo project: keep every API URL out of search results.
+// Keep the API out of search results.
 app.use((req, res, next) => {
   res.set('X-Robots-Tag', 'noindex, nofollow');
   next();

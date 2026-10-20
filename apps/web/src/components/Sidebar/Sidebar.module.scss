@@ -80,7 +80,7 @@
     }
   }
 
-  // Logging out is a secondary action, so it stays quiet until hovered.
+  // Secondary action: quiet until hovered.
   &__button--submit {
     display: flex;
     align-items: center;

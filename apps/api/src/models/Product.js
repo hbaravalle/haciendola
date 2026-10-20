@@ -9,7 +9,7 @@ class Product extends Model {
           primaryKey: true,
           autoIncrement: true,
         },
-        // Each user has their own copy of the catalog.
+        // Owner of this catalog copy.
         user_id: {
           type: DataTypes.BIGINT,
           allowNull: false,
@@ -59,9 +59,7 @@ class Product extends Model {
         timestamps: true,
         underscored: true,
         paranoid: true,
-        // Handles, SKUs and barcodes are unique within a user's catalog, so
-        // every catalog can hold the same products. Deleted products don't
-        // count, so a deleted product can be created again.
+        // Unique per catalog, ignoring deleted products.
         indexes: ["handle", "sku", "barcode"].map((field) => ({
           unique: true,
           fields: ["user_id", field],

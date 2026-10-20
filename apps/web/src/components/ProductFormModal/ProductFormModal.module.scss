@@ -1,6 +1,6 @@
 @import "../../scss/variables.scss";
 
-// Shared by the product form and the delete confirmation.
+// Shared by the product form and the delete modal.
 .modal {
   border: none;
   border-radius: $border-radius-card;
@@ -26,7 +26,7 @@
     margin: 0.25rem 0 0;
     font-size: 0.85rem;
     color: $color-text-muted;
-    // Long product titles stay on one line.
+    // One line max.
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -94,8 +94,7 @@
   }
 }
 
-// At the top level on purpose: nested inside .button, the extends would come
-// out as ".button .button__primary", which matches nothing.
+// Top level on purpose: nested in .button, the extends would match nothing.
 %button-base {
   padding: 0.55rem 1rem;
   border: none;

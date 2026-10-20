@@ -1,10 +1,8 @@
-// Single source of truth for the product domain. The API uses these values to
-// read requests and paginate, and the web app uses them to build its requests
-// and forms, so both sides agree on field names and limits.
+// Shared by the API and the web app, so both agree on fields and limits.
 
 import { z } from 'zod';
 
-// Fields a product can be created or updated with, named as the API expects them.
+// Fields a product can be created or updated with.
 export const PRODUCT_FIELDS = [
   'handle',
   'title',
@@ -19,27 +17,21 @@ export const PRODUCT_FIELDS = [
 
 export const PAGE_SIZE = 10;
 
-// Number of digits in the one-time code emailed to log in.
+// Digits in the login code.
 export const OTP_LENGTH = 6;
 
-// Seconds to wait before asking for another code for the same email.
+// Seconds before another code can be requested.
 export const OTP_RESEND_SECONDS = 60;
 
-// Shared account behind the "Try the demo" button. Its catalog goes back to the
-// seed products when the demo is opened 24 hours after the last reset.
+// Account behind "Try the demo".
 export const DEMO_EMAIL = 'demo@demos.hernanbaravalle.com';
 
 // ─── Validation ─────────────────────────────────────────────────────────────
-// The API validates every request with these schemas, and the web app checks
-// its forms with the same ones before sending, so both give the same answer.
 
-// Largest values the database columns hold: Postgres INTEGER for amounts, and
-// BIGINT for SKUs and barcodes, which stay below what a JS number keeps exact.
+// Postgres INTEGER limit, for amounts.
 const INTEGER_MAX = 2147483647;
 
-// Forms send numbers as strings and leave optional ones empty. An empty value
-// becomes null and any other string is read as a number; a missing value stays
-// missing, so an update only touches the fields it sends.
+// Form strings become numbers and "" becomes null; missing stays missing.
 function toNumber(value) {
   if (typeof value !== 'string') return value;
   const trimmed = value.trim();
@@ -86,8 +78,7 @@ const productFields = z.object({
   barcode: numberField('Barcode', { min: 1, max: Number.MAX_SAFE_INTEGER }),
 });
 
-// The compare-at price is the old price shown crossed out, so it has to be
-// higher than the price. Returns the problem, or null when there's none.
+// The compare-at price must be above the price. Returns the error or null.
 export function comparePriceIssue(product) {
   if (product.compare_price == null || product.price == null) return null;
   return product.compare_price > product.price
@@ -95,18 +86,16 @@ export function comparePriceIssue(product) {
     : 'Compare-at price must be higher than the price';
 }
 
-// A whole product: what creating one needs.
+// For creating a product.
 export const productSchema = productFields.superRefine((product, ctx) => {
   const message = comparePriceIssue(product);
   if (message) ctx.addIssue({ code: 'custom', path: ['compare_price'], message });
 });
 
-// Some of a product's fields, for an update. Only the fields sent are checked,
-// so an edit never fails over one it didn't touch; the compare-at price depends
-// on the price too, so the API checks it on the product as it will be saved.
+// For updates: only the fields sent. The API checks the compare-at price apart.
 export const productChangesSchema = productFields.partial();
 
-// Emails are compared lowercased and without surrounding spaces.
+// Trimmed and lowercased.
 export const emailSchema = z
   .string({ error: 'Enter a valid email' })
   .trim()
@@ -118,8 +107,7 @@ export const otpSchema = z
   .string({ error: `Enter the ${OTP_LENGTH}-digit code` })
   .regex(new RegExp(`^\\d{${OTP_LENGTH}}$`), { error: `Enter the ${OTP_LENGTH}-digit code` });
 
-// The first message for each field of a failed validation, e.g.
-// { price: 'Price is required' }, to show next to each form field.
+// First message per field, e.g. { price: 'Price is required' }.
 export function errorsByField(error) {
   const errors = {};
   for (const issue of error.issues) {

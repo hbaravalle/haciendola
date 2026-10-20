@@ -5,8 +5,7 @@ import { deleteExpiredAccounts } from "../services/cleanupService.js";
 
 const router = express.Router();
 
-// Vercel Cron calls this with "Authorization: Bearer <CRON_SECRET>". Anyone
-// else gets a 401, so the cleanup can't be triggered from outside.
+// Only Vercel Cron, sending "Bearer <CRON_SECRET>", can trigger it.
 function isVercelCron(req) {
   const secret = process.env.CRON_SECRET;
   if (!secret) return false;

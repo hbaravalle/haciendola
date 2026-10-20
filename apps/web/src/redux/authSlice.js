@@ -4,15 +4,15 @@ import { loadSession } from "./session";
 const signedOut = {
   token: null,
   email: null,
-  // When the account and its catalog are deleted (ISO date), null for the demo.
+  // When the account is deleted (ISO date); null for the demo.
   accountExpiresAt: null,
-  // Email the login code was sent to, carried from one login step to the next.
+  // Email waiting for its code, between the login steps.
   pendingEmail: null,
 };
 
 const authSlice = createSlice({
   name: "auth",
-  // A session saved before the last reload, if it's still valid.
+  // Restore a still-valid saved session.
   initialState: () => ({ ...signedOut, ...loadSession() }),
   reducers: {
     login: (state, action) => {

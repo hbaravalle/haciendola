@@ -1,9 +1,7 @@
 import { useRef } from "react";
 import styles from "./FormGroupOTP.module.scss";
 
-// One box per digit. Typing moves to the next box, Backspace on an empty box
-// goes back, and pasting (or the browser's one-time-code autofill) spreads the
-// whole code across the boxes.
+// One box per digit, with keyboard navigation, paste and code autofill.
 function FormGroupOTP({ title, length, value, onChange, disabled = false }) {
   const inputs = useRef([]);
   const digits = Array.from({ length }, (_, i) => value[i] ?? "");
@@ -14,7 +12,7 @@ function FormGroupOTP({ title, length, value, onChange, disabled = false }) {
     input?.select();
   };
 
-  // Writes `typed` starting at box `index` and focuses the box after it.
+  // Writes `typed` from box `index` on, then focuses the next box.
   const fill = (index, typed) => {
     const clean = typed.replace(/\D/g, "");
     if (!clean) return;

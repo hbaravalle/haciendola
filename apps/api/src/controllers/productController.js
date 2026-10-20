@@ -7,29 +7,24 @@ import {
   comparePriceIssue,
 } from "@haciendola/shared";
 
-// Every product query is limited to the catalog of the logged-in user, whose
-// id is the token's subject.
+// Scope every query to the token's user.
 function ownedBy(req) {
   return { user_id: req.auth.sub };
 }
 
-// Products are addressed by SKU (digits only) or by handle. Comparing a handle
-// with the numeric SKU column makes Postgres reject the query, so pick the
-// column from the shape of the value.
+// Digits mean SKU: matching a handle against the numeric column fails.
 function findBySkuOrHandle(req) {
   const product = req.params.product;
   const column = /^\d+$/.test(product) ? { sku: product } : { handle: product };
   return { ...column, ...ownedBy(req) };
 }
 
-// Answers a request that failed validation with the first problem found, e.g.
-// "Price is required". The web app checks its forms with the same schemas, so
-// it usually catches them first.
+// 400 with the first validation message.
 function invalid(req, res, error) {
   return response.error(req, res, error.issues[0].message, 400);
 }
 
-// A handle, SKU or barcode already used in the same catalog.
+// Duplicate handle, SKU or barcode in the catalog.
 function isDuplicate(err) {
   return err.name === "SequelizeUniqueConstraintError";
 }
@@ -44,7 +39,7 @@ async function list(req, res) {
     const count = await Product.count({ where: ownedBy(req) });
     const totalPages = Math.ceil(count / limit);
 
-    // An empty catalog still answers page 1, with no products.
+    // An empty catalog still answers page 1.
     const outOfRange =
       !Number.isInteger(pageNumber) ||
       pageNumber < 1 ||
@@ -96,8 +91,7 @@ async function find(req, res) {
 }
 
 async function create(req, res) {
-  // Numbers sent as strings come out as numbers, and empty optional fields as
-  // null rather than 0, so two products without a barcode don't collide.
+  // Empty optional fields become null, so missing barcodes don't collide.
   const parsed = productSchema.safeParse(req.body ?? {});
   if (!parsed.success) return invalid(req, res, parsed.error);
 
@@ -114,7 +108,7 @@ async function create(req, res) {
 }
 
 async function update(req, res) {
-  // Only the fields the request sends are checked and updated.
+  // Only the fields sent are checked and saved.
   const parsed = productChangesSchema.safeParse(req.body ?? {});
   if (!parsed.success) return invalid(req, res, parsed.error);
   const changes = parsed.data;

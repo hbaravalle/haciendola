@@ -33,7 +33,7 @@
     gap: 0.35rem;
   }
 
-  // Same height as the stock pill: the border takes the place of 1px of padding.
+  // The border replaces 1px of padding: same height as the stock pill.
   &__disabled {
     padding: calc(0.1rem - 1px) calc(0.5rem - 1px);
     border: 1px solid $color-border;
@@ -54,7 +54,7 @@
     }
   }
 
-  // Long titles are cut to two lines; the full title shows on hover.
+  // Two lines max; the full title shows on hover.
   &__title {
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -142,7 +142,7 @@
   }
 }
 
-// Actions menu opened from the card's three dots.
+// Card actions menu.
 .menu {
   min-width: 10rem;
   padding: 0.35rem;
@@ -194,7 +194,7 @@
   }
 }
 
-// Loading placeholder: grey bars sized like the card's text, with a soft pulse.
+// Loading placeholder sized like the card's text.
 .skeleton {
   pointer-events: none;
 
@@ -203,9 +203,7 @@
     box-shadow: none;
   }
 
-  // Each bar takes the height of the line of text it stands for (font size ×
-  // line height), and only paints a thinner bar in the middle of it, so the
-  // skeleton is exactly as tall as the card.
+  // Each bar spans its text line's height, so the skeleton matches the card.
   &__bar {
     display: block;
     --line: 1.2rem;
@@ -217,38 +215,38 @@
     background-color: $color-secondary;
     animation: skeleton-pulse 1.4s ease-in-out infinite;
 
-    // Card: id at 0.75rem × 1.5.
+    // id: 0.75rem × 1.5
     &--id {
       width: 2.5rem;
       --line: 1.125rem;
       --bar: 0.75rem;
     }
-    // Card: stock pill, 0.75rem × 1.5 plus 0.1rem padding above and below.
+    // stock pill: 0.75rem × 1.5 + 2 × 0.1rem padding
     &--stock {
       width: 5rem;
       --line: 1.325rem;
       --bar: 1.325rem;
     }
-    // Card: title at 1rem × 1.35, then 0.35rem of margin.
+    // title: 1rem × 1.35, then 0.35rem margin
     &--title {
       width: 70%;
       --line: 1.35rem;
       --bar: 1rem;
       margin-bottom: 0.35rem;
     }
-    // Card: price at 0.95rem × 1.5.
+    // price: 0.95rem × 1.5
     &--price {
       width: 4rem;
       --line: 1.425rem;
       --bar: 0.95rem;
     }
-    // Card: label at 0.65rem × 1.5.
+    // label: 0.65rem × 1.5
     &--label {
       width: 3rem;
       --line: 0.975rem;
       --bar: 0.55rem;
     }
-    // Card: value at 0.8rem × 1.5.
+    // value: 0.8rem × 1.5
     &--value {
       width: 80%;
       --line: 1.2rem;

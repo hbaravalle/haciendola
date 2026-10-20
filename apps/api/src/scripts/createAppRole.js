@@ -1,11 +1,5 @@
-// Creates (or rotates the password of) the role the API connects with. It can
-// only read and write rows: it can't create or drop tables, create databases
-// or roles, or bypass row security, so a leaked DATABASE_URL can't do more
-// than the API itself. The owner role stays in DATABASE_ADMIN_URL, used only
-// by db:init, which recreates the tables.
-//
-// Usage: node src/scripts/createAppRole.js [--write-env]
-// Run it once per Neon branch: roles live in each branch.
+// Creates (or rotates) the API's database role: rows only, no schema changes.
+// Usage: node src/scripts/createAppRole.js [--write-env], once per Neon branch.
 import "dotenv/config";
 import crypto from "crypto";
 import fs from "fs";
@@ -27,7 +21,7 @@ async function createAppRole() {
 
   const password = crypto.randomBytes(24).toString("base64url");
   const exists = (await client.query("select 1 from pg_roles where rolname = $1", [ROLE])).rowCount;
-  // Role names and passwords can't be bind parameters, so they're quoted here.
+  // Identifiers and passwords can't be bind parameters.
   const quotedPassword = `'${password.replace(/'/g, "''")}'`;
   await client.query(
     exists
@@ -40,8 +34,7 @@ async function createAppRole() {
   await client.query(`grant usage on schema public to ${ROLE}`);
   await client.query(`grant select, insert, update, delete on all tables in schema public to ${ROLE}`);
   await client.query(`grant usage, select on all sequences in schema public to ${ROLE}`);
-  // db:init drops and recreates the tables as the owner; these keep the
-  // grants on the new tables.
+  // Keep the grants when db:init recreates the tables.
   await client.query(
     `alter default privileges for role ${owner} in schema public grant select, insert, update, delete on tables to ${ROLE}`
   );
@@ -64,7 +57,7 @@ async function createAppRole() {
   }
 }
 
-// Points DATABASE_URL at the new role and keeps the owner in DATABASE_ADMIN_URL.
+// DATABASE_URL → new role, DATABASE_ADMIN_URL → owner.
 function writeEnv(adminUrl, appUrl) {
   let env = fs.readFileSync(ENV_FILE, "utf8");
   const set = (key, value) => {

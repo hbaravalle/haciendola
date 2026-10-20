@@ -1,17 +1,11 @@
-// Drops and recreates every table, so the database starts empty. There's
-// nothing to load: the demo account is created the first time someone opens
-// the demo, and every other account when its login code is verified, each with
-// its own copy of the catalog in src/data/products.json.
-//
+// Drops and recreates every table. Accounts are created on login.
 // Usage: node src/scripts/initDatabase.js
 import "dotenv/config";
-// Recreating the tables needs the owner role; the API's role can only read
-// and write rows.
+// Needs the owner role.
 if (process.env.DATABASE_ADMIN_URL) {
   process.env.DATABASE_URL = process.env.DATABASE_ADMIN_URL;
 }
-// Imported only now: static imports run before the code above, and the models
-// read DATABASE_URL as soon as they load.
+// Dynamic import: a static one would run before the override above.
 const { sequelize } = await import("../models/index.js");
 
 await sequelize.sync({ force: true });

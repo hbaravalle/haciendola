@@ -5,8 +5,7 @@ import { SESSION_KEY, clearSession, parseSession, saveSession } from "./session"
 
 const sessionChange = createListenerMiddleware();
 
-// Every account has its own catalog, so whenever the session changes the
-// cached products belong to someone else: throw them away.
+// Each account has its own catalog: drop the cache when the session changes.
 sessionChange.startListening({
   matcher: isAnyOf(login, logout),
   effect: (action, { dispatch }) => {
@@ -14,7 +13,7 @@ sessionChange.startListening({
   },
 });
 
-// Remember the session across reloads (see session.js).
+// Persist the session (see session.js).
 sessionChange.startListening({
   actionCreator: login,
   effect: (action) => saveSession(action.payload),
@@ -35,8 +34,7 @@ export const store = configureStore({
       .concat(api.middleware),
 });
 
-// Signing in or out in one tab does the same in the others, so no tab keeps
-// showing a catalog whose session ended.
+// Sync sign-in and sign-out across tabs.
 window.addEventListener("storage", (event) => {
   if (event.key !== SESSION_KEY && event.key !== null) return;
   const session = parseSession(event.newValue);

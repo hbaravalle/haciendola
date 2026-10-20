@@ -1,5 +1,4 @@
-// Runs the API as a long-lived server for local development. On Vercel the
-// same app runs as a function (api/index.js) and a cron job does the cleanup.
+// Local server. On Vercel, api/index.js runs the app and a cron does the cleanup.
 import app from "./app.js";
 import { scheduleCleanup } from "./services/cleanupService.js";
 

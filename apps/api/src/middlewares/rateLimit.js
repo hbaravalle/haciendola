@@ -2,9 +2,7 @@ import { rateLimit } from "express-rate-limit";
 import { sequelize, RateLimit } from "../models/index.js";
 import * as response from "../network/response.js";
 
-// express-rate-limit store backed by the rate_limits table, so the counts are
-// shared by every instance of the API (Vercel runs many, each with its own
-// memory). One atomic upsert per request: a finished window starts over.
+// Postgres store, so every Vercel instance shares the counts. One upsert per hit.
 class PostgresStore {
   constructor(prefix) {
     this.prefix = prefix;
@@ -36,9 +34,7 @@ class PostgresStore {
   }
 }
 
-// Limits by IP on top of the per-email limits in the login code flow, so one
-// client can't spread guesses across many emails or flood the demo login.
-// `name` keeps each route's counts apart.
+// Per-IP limit on top of the per-email one. `name` keeps routes apart.
 function limitPerIp(name, limit, windowMinutes) {
   return rateLimit({
     windowMs: windowMinutes * 60_000,
@@ -46,8 +42,7 @@ function limitPerIp(name, limit, windowMinutes) {
     standardHeaders: "draft-8",
     legacyHeaders: false,
     store: new PostgresStore(`${name}:`),
-    // If the database can't be reached, let the request through rather than
-    // locking everyone out of the login.
+    // If the database is down, don't lock everyone out.
     passOnStoreError: true,
     handler: (req, res) =>
       response.error(req, res, "Too many requests. Try again later", 429),

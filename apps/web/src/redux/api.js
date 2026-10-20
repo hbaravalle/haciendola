@@ -12,9 +12,7 @@ const rawBaseQuery = fetchBaseQuery({
   },
 });
 
-// A 401 on a request made with a session means the session ended, usually
-// because the 24-hour account was deleted. (Without one, it's a wrong login
-// code, which the login form handles.)
+// A 401 with a session means it ended (without one, it's a wrong login code).
 async function baseQuery(args, api, extraOptions) {
   const hadSession = Boolean(api.getState().auth.token);
   const result = await rawBaseQuery(args, api, extraOptions);
@@ -25,11 +23,10 @@ async function baseQuery(args, api, extraOptions) {
   return result;
 }
 
-// Every success wraps its payload in `result`.
+// Success payloads come in `result`.
 const unwrapResult = (response) => response.result;
 
-// The message the API sent with an error, or a fallback when there's none
-// (the server couldn't be reached, or answered something that isn't JSON).
+// The API's error message, or a fallback (server down, non-JSON answer).
 export function errorMessage(error, fallback = "Something went wrong. Try again") {
   if (error?.status === "FETCH_ERROR") return "Server error. Try again";
   return error?.data?.message ?? fallback;
@@ -52,9 +49,7 @@ export const api = createApi({
       transformResponse: unwrapResult,
     }),
 
-    // Every page is tagged with the whole list: any change can move products
-    // between pages, so a create, edit or delete refetches the page on screen
-    // and drops the others from the cache.
+    // One tag for every page: any change can shift products between pages.
     getProducts: build.query({
       query: (page) => `/products?page=${page}`,
       transformResponse: unwrapResult,
@@ -64,7 +59,7 @@ export const api = createApi({
       query: (product) => ({ url: "/products", method: "POST", body: product }),
       invalidatesTags: [{ type: "Product", id: "LIST" }],
     }),
-    // `sku` addresses the product as it is now; `changes` may carry a new SKU.
+    // `sku` is the current one; `changes` may carry a new SKU.
     updateProduct: build.mutation({
       query: ({ sku, changes }) => ({ url: `/products/${sku}`, method: "PUT", body: changes }),
       invalidatesTags: [{ type: "Product", id: "LIST" }],

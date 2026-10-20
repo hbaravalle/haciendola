@@ -16,7 +16,7 @@ export declare const DEMO_EMAIL: string;
 
 export type ProductField = (typeof PRODUCT_FIELDS)[number];
 
-/** Product fields as the API stores them, after validation. */
+/** Product fields after validation. */
 export interface ProductInput {
   handle: string;
   title: string;
@@ -29,22 +29,22 @@ export interface ProductInput {
   barcode?: number | null;
 }
 
-/** A whole product, for creating one. Numbers may arrive as strings. */
+/** For creating a product (numbers may be strings). */
 export declare const productSchema: import('zod').ZodType<ProductInput>;
-/** Some of a product's fields, for an update. */
+/** For updates: only the fields sent. */
 export declare const productChangesSchema: import('zod').ZodType<Partial<ProductInput>>;
-/** Why the compare-at price isn't valid for this product, or null. */
+/** The compare-at price error, or null. */
 export declare function comparePriceIssue(product: Partial<ProductInput>): string | null;
 /** Trimmed and lowercased. */
 export declare const emailSchema: import('zod').ZodType<string>;
 export declare const otpSchema: import('zod').ZodType<string>;
-/** The first message for each field of a failed validation. */
+/** First message per field. */
 export declare function errorsByField(error: import('zod').ZodError): Record<string, string>;
 
 /** A product as returned by the API. */
 export interface Product {
   id: number;
-  /** Owner of the catalog the product belongs to. */
+  /** Catalog owner. */
   user_id: number;
   handle: string;
   title: string;
@@ -61,13 +61,13 @@ export interface Product {
   deletedAt: string | null;
 }
 
-/** Every success response wraps its payload in `result`. */
+/** Success payloads come in `result`. */
 export interface ApiSuccess<T> {
   status: number;
   result: T;
 }
 
-/** Every error response carries a readable `message`. */
+/** Errors carry a `message`. */
 export interface ApiError {
   status: number;
   message: string;
@@ -77,7 +77,7 @@ export interface ApiError {
 export interface Session {
   token: string;
   email: string;
-  /** When the account and its catalog are deleted. Null for the demo account. */
+  /** When the account is deleted; null for the demo. */
   accountExpiresAt: string | null;
 }
 

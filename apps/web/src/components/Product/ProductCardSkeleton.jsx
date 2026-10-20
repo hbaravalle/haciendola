@@ -1,8 +1,7 @@
 import classNames from "classnames";
 import styles from "./ProductCard.module.scss";
 
-// Placeholder with the same layout as ProductCard, shown while a page loads so
-// the grid doesn't jump when the products arrive.
+// Same layout as ProductCard, so the grid doesn't jump on load.
 function ProductCardSkeleton() {
   const bar = (className) => (
     <span className={classNames(styles.skeleton__bar, className)} />

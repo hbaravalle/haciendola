@@ -17,16 +17,14 @@ import {
   useUpdateProductMutation,
 } from "../../redux/api";
 
-// Sends a change and tells the user how it went. Resolves to true when it
-// worked, so the modal knows whether to close. The page on screen refetches by
-// itself: every change invalidates the product list.
+// Runs a change and toasts the result. Resolves to true so the modal closes.
 async function send(request, successMessage) {
   try {
     await request.unwrap();
     toast.success(successMessage);
     return true;
   } catch (error) {
-    // A 401 already signed the user out (see redux/api.js).
+    // On 401, redux/api.js already signed out.
     if (error?.status !== 401) toast.error(errorMessage(error));
     return false;
   }
@@ -36,9 +34,7 @@ function ProductList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [showSkeleton, setShowSkeleton] = useState(false);
 
-  // `currentData` is only the page asked for; `data` keeps the last page
-  // shown, so the old cards stay up for a moment while the next page loads.
-  // A refetch after a change keeps `currentData`, so the cards never blink.
+  // `data` keeps the last page on screen while the next one loads.
   const { data, currentData, isFetching, error } = useGetProductsQuery(currentPage);
   const products = data?.products ?? null;
   const totalPages = data?.totalPages ?? 1;
@@ -49,7 +45,7 @@ function ProductList() {
   const [updateProduct] = useUpdateProductMutation();
   const [deleteProduct] = useDeleteProductMutation();
 
-  // Product being edited (or null), and whether the create form is open.
+  // Which modal is open, and for which product.
   const [editing, setEditing] = useState(null);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState(null);
@@ -91,18 +87,16 @@ function ProductList() {
 
   useEffect(() => {
     if (!error) return;
-    // Deleting the only product of the last page leaves that page empty, so
-    // step back to the one before it.
+    // The last page emptied after a delete: step back.
     if (error.status === 404 && currentPage > 1) {
       setCurrentPage((page) => page - 1);
       return;
     }
-    // A 401 already signed the user out (see redux/api.js).
+    // On 401, redux/api.js already signed out.
     if (error.status !== 401) toast.error("Could not load the products");
   }, [error, currentPage]);
 
-  // Skeletons only appear if the page takes more than a moment, so fast
-  // responses don't flash them.
+  // Skeletons only if loading takes over 150 ms.
   useEffect(() => {
     if (!loadingPage) {
       setShowSkeleton(false);
@@ -112,7 +106,7 @@ function ProductList() {
     return () => clearTimeout(timer);
   }, [loadingPage]);
 
-  // As many skeletons as products the page will hold, when that's known.
+  // As many skeletons as the page will hold.
   const skeletonCount = totalProducts
     ? Math.min(PAGE_SIZE, totalProducts - (currentPage - 1) * PAGE_SIZE)
     : PAGE_SIZE;

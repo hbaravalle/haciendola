@@ -12,7 +12,7 @@ const time = new Intl.DateTimeFormat("en-US", {
   minute: "2-digit",
 });
 
-// "today at 3:45 PM" or "tomorrow at 9:10 AM": accounts last 24 hours.
+// "today at 3:45 PM" or "tomorrow at 9:10 AM".
 function formatDeletion(iso) {
   const date = new Date(iso);
   const day = date.toDateString() === new Date().toDateString() ? "today" : "tomorrow";

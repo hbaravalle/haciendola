@@ -17,7 +17,7 @@ const MAX_ATTEMPTS = 5;
 const SESSION_DAYS = 7;
 const DEMO_RESET_HOURS = 24;
 
-// Carries the HTTP status the controller should answer with.
+// Carries the HTTP status to answer with.
 class AuthError extends Error {
   constructor(message, status, extra = {}) {
     super(message);
@@ -26,14 +26,13 @@ class AuthError extends Error {
   }
 }
 
-// The email trimmed and lowercased, or null if it isn't a valid one.
+// Normalized email, or null if invalid.
 function readEmail(rawEmail) {
   const parsed = emailSchema.safeParse(rawEmail);
   return parsed.success ? parsed.data : null;
 }
 
-// HMAC with the server secret, so a leaked table doesn't reveal the codes and
-// the same code for two emails never hashes the same.
+// Keyed HMAC: a leaked table doesn't reveal the codes.
 function hashCode(email, code) {
   return crypto
     .createHmac("sha256", process.env.JWT_SECRET)
@@ -47,13 +46,11 @@ function codesMatch(email, code, storedHash) {
   return hash.length === stored.length && crypto.timingSafeEqual(hash, stored);
 }
 
-// Emails a new code to the address, whether or not it has an account yet: the
-// account is created when the code is verified. Asking again replaces the
-// previous code, once the resend wait is over.
+// Works for new emails too: the account is created on verify.
 async function requestCode(rawEmail) {
   const email = readEmail(rawEmail);
   if (!email) throw new AuthError("Enter a valid email", 400);
-  // The demo inbox doesn't exist, so a code sent there would only bounce.
+  // The demo inbox doesn't exist.
   if (email === DEMO_EMAIL) {
     throw new AuthError("Use the demo button to try the demo account", 400);
   }
@@ -87,11 +84,10 @@ async function requestCode(rawEmail) {
   }
 }
 
-// Checks the code and returns a session. A code works once, expires, and is
-// locked after too many wrong tries so it can't be guessed.
+// Single use, expires, and locks after MAX_ATTEMPTS wrong tries.
 async function verifyCode(rawEmail, code) {
   await cleanupService.sweepIfDue();
-  // Something that isn't a code at all doesn't use up one of the tries.
+  // Malformed input doesn't use up a try.
   if (!otpSchema.safeParse(code).success) {
     throw new AuthError(`Enter the ${OTP_LENGTH}-digit code`, 400);
   }
@@ -107,7 +103,7 @@ async function verifyCode(rawEmail, code) {
     throw invalid;
   }
 
-  // A locked code stays stored, so asking for a new one still has to wait.
+  // Kept stored so the resend wait still applies.
   const tooManyTries = new AuthError("Too many wrong tries. Ask for a new code", 401);
   if (loginCode.attempts >= MAX_ATTEMPTS) throw tooManyTries;
 
@@ -117,14 +113,13 @@ async function verifyCode(rawEmail, code) {
     throw attempts >= MAX_ATTEMPTS ? tooManyTries : invalid;
   }
 
-  // Only the request that deletes the code logs in, so two requests with the
-  // same code can't both succeed.
+  // Deleting first keeps the code single-use under concurrent requests.
   const deleted = await LoginCode.destroy({ where: { email } });
   if (!deleted) throw invalid;
 
   let user = await User.findOne({ where: { email }, paranoid: false });
   if (user && user.deletedAt) throw new AuthError("This account is disabled", 403);
-  // An expired account the hourly cleanup hasn't reached yet starts over.
+  // Expired but not swept yet: start over.
   if (user && cleanupService.isExpired(user)) {
     await user.destroy({ force: true });
     user = null;
@@ -134,8 +129,7 @@ async function verifyCode(rawEmail, code) {
   return createSession(user);
 }
 
-// A new account starts with its own copy of the catalog, created together
-// with the user so there's never an account without products.
+// User and catalog in one transaction.
 function createUserWithCatalog(fields) {
   return sequelize.transaction(async (transaction) => {
     const user = await User.create(fields, { transaction });
@@ -144,9 +138,7 @@ function createUserWithCatalog(fields) {
   });
 }
 
-// Logs in to the shared demo account without an email, so visitors can try
-// the catalog in one click. Every visitor shares its catalog, so it goes back
-// to the seed products once a day.
+// Shared demo account; its catalog resets once a day.
 async function startDemoSession() {
   await cleanupService.sweepIfDue();
   let user = await User.findOne({ where: { email: DEMO_EMAIL } });
@@ -163,8 +155,7 @@ async function startDemoSession() {
   return createSession(user);
 }
 
-// A session never outlives its account: it ends when the account is deleted,
-// or after SESSION_DAYS for the demo account, which is never deleted.
+// The token never outlives the account (the demo's lasts SESSION_DAYS).
 function createSession(user) {
   const isDemo = user.email === DEMO_EMAIL;
   const accountExpiresAt = isDemo ? null : cleanupService.accountExpiresAt(user);

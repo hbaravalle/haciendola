@@ -1,3 +1,2 @@
-// Base URL of the Haciéndola API. Set VITE_API_URL in .env to point the app at
-// another server; without it, the app uses the API running locally.
+// Set VITE_API_URL to use another API; defaults to the local one.
 export const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000/api";

@@ -1,8 +1,7 @@
 import toast from "react-hot-toast";
 import { errorMessage, useRequestCodeMutation } from "../../redux/api";
 
-// Asks the API to email a login code and tells the user how it went. The
-// returned function resolves to true when the code was sent.
+// Requests a login code and toasts the result. Resolves to true if sent.
 export function useRequestCode() {
   const [requestCode, { isLoading }] = useRequestCodeMutation();
 

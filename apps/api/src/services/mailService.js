@@ -5,8 +5,7 @@ const resend = process.env.RESEND_API_KEY
   : null;
 
 async function sendLoginCode(email, code, minutesValid) {
-  // Without a Resend key (local development) print the code instead of
-  // sending it, so the login flow can be tried without an email provider.
+  // No Resend key: print the code instead (local dev).
   if (!resend) {
     console.log(`[Mail] Login code for ${email}: ${code}`);
     return;

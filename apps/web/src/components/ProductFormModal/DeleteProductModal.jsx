@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import { Modal } from "react-bootstrap";
 import styles from "./ProductFormModal.module.scss";
 
-// Asks before deleting, naming the product. `onConfirm` resolves to true when
-// the product was deleted.
+// Confirms before deleting. `onConfirm` resolves to true on success.
 function DeleteProductModal({ product, onClose, onConfirm }) {
   const [deleting, setDeleting] = useState(false);
 

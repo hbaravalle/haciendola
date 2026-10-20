@@ -1,8 +1,6 @@
 import { Model, DataTypes } from "sequelize";
 
-// The one-time code waiting to be typed for an email. Codes live apart from
-// users because an email gets a code before its account exists: the account is
-// created when the code is verified. Only a hash of the code is stored.
+// Pending login code per email (the account may not exist yet). Stored hashed.
 class LoginCode extends Model {
   static initModel(sequelize) {
     LoginCode.init(

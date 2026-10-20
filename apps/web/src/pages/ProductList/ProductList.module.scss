@@ -4,15 +4,14 @@
   display: flex;
 }
 
-// The sidebar is fixed, so the content starts after it.
+// Content starts after the fixed sidebar.
 .content {
   flex-grow: 1;
   min-width: 0;
   margin-left: $sidebar-width;
   padding: 2.5rem 2.5rem 3rem;
 
-  // Centered in the space next to the sidebar once the screen is wider than
-  // the content.
+  // Centered next to the sidebar on wide screens.
   & > * {
     max-width: 1200px;
     margin-left: auto;
@@ -20,7 +19,7 @@
   }
 }
 
-// Two columns of cards, one when the space next to the sidebar gets narrow.
+// Two columns, one when space gets narrow.
 .grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

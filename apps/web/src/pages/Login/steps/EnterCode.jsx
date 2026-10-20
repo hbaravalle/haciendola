@@ -27,8 +27,7 @@ function EnterCode() {
   const verify = async (fullCode) => {
     try {
       const session = await verifyCode({ email, otp: fullCode }).unwrap();
-      // Storing the session clears the pending email; the redirect below
-      // then takes the user to the catalog.
+      // login() clears the pending email; the redirect below does the rest.
       dispatch(login(session));
       toast("Welcome!", { icon: "✨" });
     } catch (error) {
@@ -37,7 +36,7 @@ function EnterCode() {
     }
   };
 
-  // Send the code as soon as the last digit is typed or pasted.
+  // Verify as soon as the last digit is in.
   const handleCodeChange = (next) => {
     setCode(next);
     if (next.length === OTP_LENGTH && !verifying) verify(next);

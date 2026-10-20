@@ -1,8 +1,6 @@
 import { Model, DataTypes } from "sequelize";
 
-// Requests counted for one key (limiter + IP) in the current window. Kept in
-// the database so every instance of the API shares the same counts: on
-// Vercel each function instance has its own memory.
+// Hits per key (limiter + IP) in the current window, shared by every instance.
 class RateLimit extends Model {
   static initModel(sequelize) {
     RateLimit.init(

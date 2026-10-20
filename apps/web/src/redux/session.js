@@ -1,21 +1,16 @@
-// Keeps the session in localStorage so a reload doesn't sign the user out.
-// An httpOnly cookie would keep the token away from scripts, but the web app
-// and the API live on different vercel.app subdomains, where browsers block
-// that cookie as third-party. Sessions last 24 hours at most (7 days for the
-// demo), and the API checks the token on every request anyway.
+// Session in localStorage. An httpOnly cookie won't do: across the two
+// vercel.app subdomains, browsers block it as third-party.
 
 export const SESSION_KEY = "haciendola.session";
 
-// When the token stops working, read from the token itself: the demo's
-// session has no account expiry, but every token has an `exp`.
+// From the JWT's `exp` (the demo has no account expiry).
 function tokenExpiresAt(token) {
   const payload = token.split(".")[1];
   const { exp } = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
   return exp * 1000;
 }
 
-// Turns a stored value into a session, or null when there's none, it can't be
-// read, or its token has expired.
+// The stored session, or null if missing, unreadable or expired.
 export function parseSession(raw) {
   try {
     const session = JSON.parse(raw);
@@ -27,8 +22,7 @@ export function parseSession(raw) {
   }
 }
 
-// Storage can be blocked (some private windows, or site data turned off); the
-// app then works as before and only forgets the session on reload.
+// Storage may be blocked; then the session just won't survive a reload.
 export function loadSession() {
   try {
     return parseSession(localStorage.getItem(SESSION_KEY));
@@ -41,7 +35,7 @@ export function saveSession({ token, email, accountExpiresAt }) {
   try {
     localStorage.setItem(SESSION_KEY, JSON.stringify({ token, email, accountExpiresAt }));
   } catch {
-    // Not stored: the session lasts until the tab is reloaded.
+    // Not saved: the session ends on reload.
   }
 }
 
