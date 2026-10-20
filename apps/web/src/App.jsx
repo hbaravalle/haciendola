@@ -4,9 +4,6 @@ import { useSelector } from "react-redux";
 import { Toaster } from "react-hot-toast";
 import ProductList from "./pages/ProductList/ProductList";
 import Login from "./pages/Login";
-import Register from "./pages/Register";
-import ResetPassword from "./pages/ResetPassword";
-import NewPassword from "./pages/NewPassword";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import "./App.scss";
@@ -16,13 +13,7 @@ function App() {
   return (
     <>
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route
-          path="/auth/forgot-password/:step?"
-          element={<ResetPassword />}
-        />
-        <Route path="/auth/new-password" element={<NewPassword />} />
+        <Route path="/login/:step?" element={<Login />} />
         <Route element={<ProtectedRoute user={user} />}>
           <Route path="/" element={<ProductList />} />
         </Route>

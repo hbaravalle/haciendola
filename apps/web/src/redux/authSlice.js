@@ -3,6 +3,10 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   token: null,
   email: null,
+  // When the account and its catalog are deleted (ISO date), null for the demo.
+  accountExpiresAt: null,
+  // Email the login code was sent to, carried from one login step to the next.
+  pendingEmail: null,
 };
 
 const authSlice = createSlice({
@@ -12,19 +16,15 @@ const authSlice = createSlice({
     login: (state, action) => {
       state.token = action.payload.token;
       state.email = action.payload.email;
+      state.accountExpiresAt = action.payload.accountExpiresAt ?? null;
+      state.pendingEmail = null;
     },
-    logout: (state) => {
-      state.token = null;
-      state.email = null;
-    },
-    recover: (state, action) => {
-      state.email = action.payload.email;
-    },
-    setOtp: (state, action) => {
-      state.otp = action.payload.otp;
+    logout: () => initialState,
+    setPendingEmail: (state, action) => {
+      state.pendingEmail = action.payload;
     },
   },
 });
 
-export const { login, logout, recover, setOtp } = authSlice.actions;
+export const { login, logout, setPendingEmail } = authSlice.actions;
 export default authSlice.reducer;
