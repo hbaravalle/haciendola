@@ -62,33 +62,46 @@ That decision found a real bug. When editing a product, the web app sent `compar
 
 **Both apps speak ES modules.** The API used to load the shared package with `require()`, which Node 24 accepts for an ES module locally but Vercel's runtime doesn't: the first deploy crashed with `ERR_REQUIRE_ESM`. The quick fix was to make the shared package CommonJS, until it started importing Zod: through CommonJS the bundler can't tell which parts of Zod are used, and the web app went from 118 KB to 223 KB gzipped, every language's error messages included. Moving the API to `import`/`export` let the package be an ES module again, and Zod now costs the web app 26 KB.
 
-## More decisions
+## Logging in without passwords
 
-**Every product route is protected.** Product endpoints require a valid JWT (`express-jwt`), and a dedicated middleware turns token errors into clean `401` answers. Only the login routes are public. A session lasts until its account is deleted, 24 hours after sign-up, or seven days for the demo account.
+The API emails a 6-digit code through [Resend](https://resend.com), and typing it is the only way in.
 
-**No passwords at all.** The API emails a 6-digit code through [Resend](https://resend.com), and typing it is the only way in. With nothing to store, there is no password to leak, reuse or reset. The same request works for an email that has no account yet: the account is created when its code is verified, so there is no sign-up form and the API never tells anyone whether an email is registered.
+- **Nothing to leak, reuse or reset.** There are no passwords. The same request signs up a new email: its account is created when the code is verified, so the API never reveals whether an email is registered.
+- **Codes that can't be guessed or reused.** Only an HMAC of each code is stored. A code expires after 10 minutes, works once and locks after 5 wrong tries, and every login route is rate-limited by IP.
+- **A demo that skips the inbox.** **Try the demo** signs in to a shared account in one click. Its catalog goes back to the seed products a day after its last reset.
+- **No email account needed locally.** Without a Resend key, the API prints the code in its console.
 
-**Codes that can't be guessed or reused.** Codes live in their own `login_codes` table, apart from users, and only an HMAC of each code is stored. A code expires after 10 minutes, works once (two requests with the same code can't both log in) and locks after 5 wrong tries. A new code for the same email can be asked for once a minute, so each minute allows at most 5 guesses, and every login route is also rate-limited by IP (`express-rate-limit`). Without a Resend key, the API prints the code in its console instead of emailing it, so the login can be tried locally without an email account.
+## A catalog per account
 
-**A catalog per account.** Every product belongs to a user, and every product query is filtered by the user in the token. A new account starts with its own copy of the 263 seed products, created in the same transaction as the user, so what one person creates, edits or deletes never reaches anyone else. Handles, SKUs and barcodes are unique within a catalog, ignoring deleted products, so every catalog can hold the same products and a deleted one can be created again.
+- **Nobody else's changes.** A new account starts with its own copy of the 263 seed products, and every product query is filtered by the user in the token.
+- **Accounts that delete themselves.** Accounts last 24 hours, catalog included, and the session ends with them; the sidebar shows when. On Vercel a daily cron job and the logins themselves run the cleanup.
+- **Two ways to address a product.** `GET`, `PUT` and `DELETE /products/:product` take a SKU or a handle, the two IDs a store team uses.
+- **Soft delete.** Deleting a product only marks it, so a mistake can be undone in the database while the account exists.
 
-**Accounts that delete themselves.** Accounts created with an email last 24 hours. An hourly sweep deletes expired accounts for good, with their catalogs (through an `ON DELETE CASCADE` foreign key), along with unused login codes and finished rate limit windows. Locally it runs on a timer inside the server; on Vercel, where nothing stays running, a daily cron job and the logins themselves run it instead (see [Deploying to Vercel](#-deploying-to-vercel)). Sessions never outlive their account: the token expires when the account does, and the web app sends the user back to the login when it gets a `401`. The sidebar shows when the account will be deleted.
+## Data and safety
 
-**A database role that can only touch rows.** The API connects as `haciendola_app`, a role that can read and write the four tables (users, products, login codes and rate limits) but can't create or drop tables, create databases or roles, or bypass row security. The owner role is kept in `DATABASE_ADMIN_URL` for the seeders, which recreate the tables, and default privileges keep the grants on the recreated tables. `pnpm db:app-role` creates the role (or rotates its password) on each Neon branch. The owner connection never reaches production: the seeders and the role script run from a developer's machine.
+- **One set of rules, checked twice.** The Zod schemas in the shared package validate every request in the API, and the product form before it's sent, showing each problem under its field.
+- **No barcode, no sale.** A product without a barcode is saved as disabled, and its card says so.
+- **Protected routes.** Every product route needs a valid JWT; only the login routes are public.
+- **A database role that can only touch rows.** The API connects as `haciendola_app`, which can't create or drop tables. The owner connection stays on a developer's machine, for the seeders.
+- **Out of search results.** Both apps send `noindex`. `robots.txt` doesn't block crawlers, on purpose: a crawler that can't read a page never sees its `noindex`.
 
-**A demo that skips the inbox.** The login screen opens with a **Try the demo** button that signs in to a shared demo account, so anyone reviewing the project sees the catalog in one click without handing over an email. Its catalog is shared by every visitor, so it goes back to the seed products when someone opens the demo more than 24 hours after the last reset, with no scheduled job. Signing in with an email is what gets you a private catalog.
+## ✨ Features
 
-**Two ways to address a product.** Store teams think in SKUs and URLs think in handles, so `GET`, `PUT` and `DELETE /products/:product` accept either one. The API picks the column from the value (digits mean SKU), because comparing a handle with the numeric SKU column makes Postgres reject the query.
+**Web app** (`apps/web`)
+- Product catalog in cards, ten per page, with skeletons while a page loads and visited pages that come back instantly
+- Create, edit and delete in modals over the list, with confirmation before deleting and a toast after every action
+- Product form checked field by field, with the handle filled in from the title
+- Login with a demo button or an emailed code, typed in one box per digit, with paste and autofill
+- Session kept across reloads and shared between tabs
 
-**One set of rules, checked twice.** The Zod schemas live in the shared package: the API validates every request with them, and the product form checks itself with the same ones before sending, showing each problem under its field. A handle is lowercase letters, numbers and single dashes; SKU and price are required; amounts are whole numbers that fit their column and can't be negative; and the compare-at price has to be higher than the price. Numbers that arrive as strings are read as numbers, and empty optional fields are stored as `null`. An update only checks the fields it sends, so an edit never fails over one it didn't touch, but the compare-at price is checked against the price the product will have after the edit.
-
-**No barcode, no sale.** A product without a barcode is saved as disabled (`enabled: false`): a model hook sets the flag on every save, so it always follows the barcode. The card shows a **Disabled** badge, and the form says so under the barcode field.
-
-**Soft delete.** The product model is `paranoid`: deleting sets `deletedAt` instead of removing the row, so a mistake in the admin can be undone in the database while the account exists. Deleting an account, or resetting the demo, removes its products for good.
-
-**One command to a working database.** `pnpm db:init` syncs the models against the Postgres database (a [Neon](https://neon.tech) project works out of the box) and creates three test users, each with their own copy of the 263 products. Like any account, they're deleted 24 hours later; `pnpm seed` brings them back.
-
-**Out of search results.** It's a demo, so the web app has a `robots` meta tag and both apps send `X-Robots-Tag: noindex, nofollow` with every response. `robots.txt` doesn't block crawlers, on purpose: a crawler that can't read a page never sees its `noindex`.
+**API** (`apps/api`)
+- Passwordless login with emailed one-time codes, plus a shared demo account
+- Paginated product listing, newest first, with links to the next and previous pages
+- Products created, updated and deleted by SKU or handle, validated with Zod
+- One catalog per account, deleted with the account after 24 hours
+- IP rate limits shared by every instance, and a cron route for the cleanup
+- Serverless deployment on Vercel, database on Neon
 
 ## 🧱 Architecture
 
@@ -126,9 +139,9 @@ haciendola/
 
 **Global state only where it's shared.** Redux Toolkit holds the session (token, email and when the account is deleted), which the routes, the sidebar and every API call need. Everything else, such as the current page and the modals, stays local to the page that uses it.
 
-**Server data in RTK Query.** Every request goes through one API slice, which adds the token, unwraps the API's `{ status, result }` answers and signs the user out on a `401` from an expired session. Pages are cached per page number and tagged as one list, so creating, editing or deleting a product refetches the page on screen and drops the rest, and an answer for a page you already left never reaches the screen. When the session changes, the cache is emptied, since every account has its own catalog.
+**Server data in RTK Query.** One API slice makes every request: it adds the token, signs the user out when the session expires, and refetches the page on screen after any change. The cache is emptied whenever the session changes, since every account has its own catalog.
 
-**A session that survives a reload.** The session is kept in `localStorage`, and a token that expired while the tab was closed is dropped on load instead of failing on the first request. Signing in or out in one tab does the same in the others. An `httpOnly` cookie would keep the token out of reach of scripts, but the web app and the API live on different `vercel.app` subdomains, where browsers block that cookie as third-party; sessions last 24 hours at most (7 days for the demo), which keeps the trade-off small. If storage is blocked, the app still works and only forgets the session on reload.
+**A session that survives a reload.** It's kept in `localStorage` and synced between tabs, and a token that expired while the tab was closed is dropped on load. An `httpOnly` cookie would keep it away from scripts, but the two apps live on different `vercel.app` subdomains, where browsers block that cookie as third-party.
 
 **Layers in the API.** Routes map URLs and apply authentication, controllers deal with HTTP and pick the status code, services hold the login, catalog and cleanup rules, and one helper (`network/response.js`) gives every success (`{ status, result }`) and error (`{ status, message }`) the same shape.
 
@@ -182,7 +195,7 @@ pnpm dev       # API on localhost:3000 and web app on localhost:5173
 
 Optionally, `pnpm db:app-role -- --write-env` makes the API connect with a role that can only read and write rows, and keeps the owner connection for the seeders.
 
-**Trying it:** the **Try the demo** button needs nothing else. The test users `leia@`, `luke@` and `han@starwars.com` don't have real inboxes, so log in as them without a Resend key and read the code in the API console, or log in with your own email.
+**Trying it:** the **Try the demo** button needs nothing else. The test users `leia@`, `luke@` and `han@starwars.com` don't have real inboxes, so log in as them without a Resend key and read the code in the API console, or log in with your own email. Like any account, the test users are deleted 24 hours later; `pnpm seed` brings them back.
 
 | Script | Description |
 |---|---|
