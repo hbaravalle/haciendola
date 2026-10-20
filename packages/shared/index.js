@@ -29,5 +29,6 @@ exports.OTP_LENGTH = 6;
 // Seconds to wait before asking for another code for the same email.
 exports.OTP_RESEND_SECONDS = 60;
 
-// Shared account behind the "Try the demo" button. Its catalog resets daily.
+// Shared account behind the "Try the demo" button. Its catalog goes back to the
+// seed products when the demo is opened 24 hours after the last reset.
 exports.DEMO_EMAIL = 'demo@demos.hernanbaravalle.com';

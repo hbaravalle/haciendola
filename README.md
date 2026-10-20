@@ -4,10 +4,13 @@
 
 A product catalog admin for an online store: try it in one click with a shared demo account, or log in with a code sent by email to get your own copy of the catalog for 24 hours, then browse, create, edit or delete products. The React front end and the Express API live together in one pnpm workspace. Built as my solution to the **Haciendola Full Stack Challenge**.
 
+**Live demo:** [haciendola-web.vercel.app](https://haciendola-web.vercel.app)
+
 ![React](https://img.shields.io/badge/React_18-20232A?style=flat-square&logo=react&logoColor=61DAFB)
 ![Redux Toolkit](https://img.shields.io/badge/Redux_Toolkit-764ABC?style=flat-square&logo=redux&logoColor=white)
 ![React Router](https://img.shields.io/badge/React_Router-CA4245?style=flat-square&logo=reactrouter&logoColor=white)
 ![Sass](https://img.shields.io/badge/Sass_Modules-CC6699?style=flat-square&logo=sass&logoColor=white)
+![React Bootstrap](https://img.shields.io/badge/React_Bootstrap-7952B3?style=flat-square&logo=bootstrap&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white)
 ![Express](https://img.shields.io/badge/Express-000000?style=flat-square&logo=express&logoColor=white)
@@ -28,7 +31,7 @@ Build a full stack app for managing an online store's products: users log in, se
 - As a visitor checking out the project, I want to **try it in one click**, without giving out my email.
 - As an admin who signs in with my email, I want **my own copy of the catalog**, so nobody else's changes get in the way.
 - As a visitor who left my email, I want **my account deleted after a day**, so nothing I leave behind is kept.
-- As an admin, I want to **browse the catalog ten products at a time**, newest first, with each product's title, prices, stock, SKU and barcode at a glance.
+- As an admin, I want to **browse the catalog ten products at a time**, newest first, with each product's title, prices, stock, SKU and barcode at a glance, and which ones are disabled.
 - As an admin, I want to **create a product** from a form in a modal, without leaving the list.
 - As an admin, I want to **edit a product** with its current data already filled in.
 - As an admin, I want to **confirm before deleting a product**, seeing which one I'm about to delete.
@@ -56,6 +59,8 @@ The front end and the API started in 2024 as two separate repositories. In 2026 
 
 That decision found a real bug. When editing a product, the web app sent `comparePrice` while the API expected `compare_price`, so **changes to the compare-at price were silently ignored**. Now `@haciendola/shared` defines the product fields, the page size, the length of the one-time code, the wait before asking for a new one and the demo account's email, and both apps read them from there.
 
+The shared package is plain CommonJS. The API loads it with `require()`, which Node 24 accepts for an ES module locally but Vercel's runtime doesn't: the first deploy crashed with `ERR_REQUIRE_ESM`. Vite converts the package for the web app, so both still read one file.
+
 ## More decisions
 
 **Every product route is protected.** Product endpoints require a valid JWT (`express-jwt`), and a dedicated middleware turns token errors into clean `401` answers. Only the login routes are public. A session lasts until its account is deleted, 24 hours after sign-up, or seven days for the demo account.
@@ -66,24 +71,29 @@ That decision found a real bug. When editing a product, the web app sent `compar
 
 **A catalog per account.** Every product belongs to a user, and every product query is filtered by the user in the token. A new account starts with its own copy of the 263 seed products, created in the same transaction as the user, so what one person creates, edits or deletes never reaches anyone else. Handles, SKUs and barcodes are unique within a catalog, ignoring deleted products, so every catalog can hold the same products and a deleted one can be created again.
 
-**Accounts that delete themselves.** Accounts created with an email last 24 hours. An hourly sweep inside the API deletes expired accounts for good, with their catalogs (through an `ON DELETE CASCADE` foreign key) and any unused login codes, so no cron job is needed. Sessions never outlive their account: the token expires when the account does, and the web app sends the user back to the login when it gets a `401`. The sidebar shows when the account will be deleted.
+**Accounts that delete themselves.** Accounts created with an email last 24 hours. An hourly sweep deletes expired accounts for good, with their catalogs (through an `ON DELETE CASCADE` foreign key), along with unused login codes and finished rate limit windows. Locally it runs on a timer inside the server; on Vercel, where nothing stays running, a daily cron job and the logins themselves run it instead (see [Deploying to Vercel](#-deploying-to-vercel)). Sessions never outlive their account: the token expires when the account does, and the web app sends the user back to the login when it gets a `401`. The sidebar shows when the account will be deleted.
 
-**A database role that can only touch rows.** The API connects as `haciendola_app`, a role that can read and write the three tables but can't create or drop tables, create databases or roles, or bypass row security. The owner role is kept in `DATABASE_ADMIN_URL` for the seeders, which recreate the tables, and default privileges keep the grants on the recreated tables. `pnpm db:app-role` creates the role (or rotates its password) on each Neon branch.
+**A database role that can only touch rows.** The API connects as `haciendola_app`, a role that can read and write the four tables (users, products, login codes and rate limits) but can't create or drop tables, create databases or roles, or bypass row security. The owner role is kept in `DATABASE_ADMIN_URL` for the seeders, which recreate the tables, and default privileges keep the grants on the recreated tables. `pnpm db:app-role` creates the role (or rotates its password) on each Neon branch. The owner connection never reaches production: the seeders and the role script run from a developer's machine.
 
 **A demo that skips the inbox.** The login screen opens with a **Try the demo** button that signs in to a shared demo account, so anyone reviewing the project sees the catalog in one click without handing over an email. Its catalog is shared by every visitor, so it goes back to the seed products when someone opens the demo more than 24 hours after the last reset, with no scheduled job. Signing in with an email is what gets you a private catalog.
 
 **Two ways to address a product.** Store teams think in SKUs and URLs think in handles, so `GET`, `PUT` and `DELETE /products/:product` accept either one. The API picks the column from the value (digits mean SKU), because comparing a handle with the numeric SKU column makes Postgres reject the query.
 
+**No barcode, no sale.** A product without a barcode is saved as disabled (`enabled: false`): a model hook sets the flag on every save, so it always follows the barcode. The card shows a **Disabled** badge, and the form says so under the barcode field.
+
 **Soft delete.** The product model is `paranoid`: deleting sets `deletedAt` instead of removing the row, so a mistake in the admin can be undone in the database while the account exists. Deleting an account, or resetting the demo, removes its products for good.
 
 **One command to a working database.** `pnpm db:init` syncs the models against the Postgres database (a [Neon](https://neon.tech) project works out of the box) and creates three test users, each with their own copy of the 263 products. Like any account, they're deleted 24 hours later; `pnpm seed` brings them back.
+
+**Out of search results.** It's a demo, so the web app has a `robots` meta tag and both apps send `X-Robots-Tag: noindex, nofollow` with every response. `robots.txt` doesn't block crawlers, on purpose: a crawler that can't read a page never sees its `noindex`.
 
 ## 🧱 Architecture
 
 ```
 haciendola/
 ├── apps/
-│   ├── web/                  # React 18 + Vite + Redux Toolkit + React Router + Sass modules
+│   ├── web/                  # React 18 + Vite + Redux Toolkit + React Router + Sass modules + React Bootstrap
+│   │   ├── public/           # Favicons and logo
 │   │   └── src/
 │   │       ├── config.js     # API base URL (VITE_API_URL)
 │   │       ├── redux/        # Store and auth slice (session, account expiry, email waiting for its code)
@@ -93,6 +103,7 @@ haciendola/
 │   │       └── layouts/      # Shared layout for the auth screens
 │   └── api/                  # Node.js + Express + Sequelize + PostgreSQL
 │       ├── api/index.js      # Vercel function: the same Express app
+│       ├── public/           # Favicons served at /favicon.ico and /favicon.svg
 │       └── src/
 │           ├── app.js        # Express app, shared by the local server and Vercel
 │           ├── server.js     # Local server with the hourly cleanup
@@ -101,10 +112,11 @@ haciendola/
 │           ├── services/     # Login codes and sessions, catalog copies, account cleanup, email
 │           ├── models/       # User, LoginCode, Product (paranoid, one catalog per user), RateLimit
 │           ├── middlewares/  # JWT error handler, rate limits by IP, base URL for pagination links
+│           ├── network/      # One shape for every success and error response
 │           ├── scripts/      # Create the API's database role
 │           └── seeders/      # 263 seed products, copied into each test user's catalog
 ├── packages/
-│   └── shared/               # Product fields, page size, login code rules, demo email and API types
+│   └── shared/               # Product fields, page size, login code rules, demo email and API types (CommonJS)
 └── pnpm-workspace.yaml
 ```
 
@@ -120,23 +132,29 @@ Base URL: `http://localhost:3000/api`
 
 | Method | Route | Description |
 |---|---|---|
-| `POST` | `/auth/otp` | Email a login code to `email`. Answers `429` with `Retry-After` if asked again within a minute |
-| `POST` | `/auth/verify` | Check `otp` for `email` and return `{ token, email, accountExpiresAt }`, creating the account and its catalog on first login. A wrong, expired or used code answers `401` |
+| `POST` | `/auth/otp` | Email a login code to `email`. An invalid email, or the demo account's, answers `400`; asking again within a minute answers `429` with `Retry-After` |
+| `POST` | `/auth/verify` | Check `otp` for `email` and return `{ token, email, accountExpiresAt }`, creating the account and its catalog on first login. A wrong, expired, used or locked code answers `401` |
 | `POST` | `/auth/demo` | Return `{ token, email, accountExpiresAt: null }` for the shared demo account, no email needed |
 
-Every auth route is also limited by IP and answers `429` past the limit.
+Every auth route is also limited by IP, per 15 minutes: 10 code requests, 30 verifications and 20 demo logins. Past the limit it answers `429`.
 
 **Products (require `Authorization: Bearer <token>`, and only reach the catalog of the token's user)**
 
 | Method | Route | Description |
 |---|---|---|
-| `GET` | `/products?page=1` | Ten products per page, newest first, with `count`, `totalPages`, `next` and `prev` |
+| `GET` | `/products?page=1` | Ten products per page, newest first, with `count`, `totalPages`, `next` and `prev`. A page past the last answers `404` |
 | `GET` | `/products/:product` | One product by SKU or handle |
 | `POST` | `/products` | Create a product. A handle, SKU or barcode already in the catalog answers `409` |
-| `PUT` | `/products/:product` | Update the fields sent, by SKU or handle |
+| `PUT` | `/products/:product` | Update the fields sent, by SKU or handle. A handle, SKU or barcode already in the catalog answers `409` |
 | `DELETE` | `/products/:product` | Soft-delete a product by SKU or handle |
 
-Unknown products answer `404`, and a missing, invalid or expired token answers `401`. An empty catalog answers page 1 with no products.
+Unknown products answer `404`, and a missing, invalid or expired token answers `401`. An empty catalog answers page 1 with no products. Each product comes with `enabled`, which is `false` when it has no barcode.
+
+**Cron (requires `Authorization: Bearer <CRON_SECRET>`)**
+
+| Method | Route | Description |
+|---|---|---|
+| `GET` | `/cron/cleanup` | Delete expired accounts, unused login codes and finished rate limit windows, and return how many of each as `{ accounts, codes, rateLimits }`. Without the secret it answers `401` |
 
 ## 🚀 Running locally
 
@@ -166,13 +184,13 @@ Optionally, `pnpm db:app-role -- --write-env` makes the API connect with a role 
 | `pnpm lint` | Lint the web app |
 | `pnpm db:init` | Create the tables and load the seed data |
 | `pnpm db:app-role` | Create the API's database role on the current branch. Add `-- --write-env` to save it in `.env` |
-| `pnpm seed` | Reset products and users to the seed data |
+| `pnpm seed` | Reset the database to the seed data. Like `db:init`, it drops every table first, so every account and catalog is lost |
 
 ## ▲ Deploying to Vercel
 
 Both apps deploy to Vercel as two projects from this repository, with the database on Neon.
 
-**Why the API changes shape there.** On Vercel the API runs as a function, not a server that stays up, so three things that worked in memory move elsewhere: the hourly cleanup becomes a **Vercel Cron** job (`/api/cron/cleanup`, protected by `CRON_SECRET`) backed by a sweep on every login, the IP rate limits are counted in a `rate_limits` table that every instance shares, and Express trusts Vercel's proxy so those limits see the visitor's IP. The Hobby plan only allows daily crons, which is why logins also sweep.
+**Why the API changes shape there.** On Vercel the API runs as a function, not a server that stays up. The hourly cleanup has no server to run in, so a daily **Vercel Cron** job calls `/api/cron/cleanup` (protected by `CRON_SECRET`), and logins sweep too, at most once an hour, because the Hobby plan only allows daily crons. Many instances run at once, which is why the IP rate limits are counted in a `rate_limits` table they all share rather than in memory. And Express trusts Vercel's proxy, so those limits see the visitor's IP instead of the proxy's.
 
 **1. Database (Neon `main` branch).** Copy the `main` branch's owner connection string from Neon, pooled (the host with `-pooler`, since functions open many short connections), and pass it on the command line so your local `.env` keeps pointing at `dev`:
 
@@ -190,10 +208,12 @@ The second command prints the `haciendola_app` connection string for the API. Ru
 | `DATABASE_URL` | The `haciendola_app` connection string from step 1 |
 | `JWT_SECRET` | A new long random string, different from development |
 | `RESEND_API_KEY`, `MAIL_FROM` | As in development |
-| `WEB_ORIGIN` | The web app's URL, e.g. `https://haciendola.vercel.app` |
+| `WEB_ORIGIN` | The web app's URL, without a trailing slash, e.g. `https://haciendola-web.vercel.app` |
 | `CRON_SECRET` | A long random string; Vercel sends it to the cron route |
 
-**3. Web project.** New Vercel project from the repo, with **Root Directory** `apps/web` (Vite is detected). `apps/web/vercel.json` sends every route to `index.html`, so reloading `/login/code` works. Set `VITE_API_URL` to the API's URL plus `/api`, e.g. `https://haciendola-api.vercel.app/api`.
+`DATABASE_ADMIN_URL` stays out of Vercel: the API never reads it.
+
+**3. Web project.** New Vercel project from the repo, with **Root Directory** `apps/web` (Vite is detected). `apps/web/vercel.json` sends every route to `index.html`, so reloading `/login/code` works. Set `VITE_API_URL` to the API's URL plus `/api`, e.g. `https://haciendola-api.vercel.app/api`, for the **Production** environment. Vite writes it into the build, so it has to be there before the build runs: changing it later takes a redeploy, and a build without it calls `localhost:3000`. `apps/web/vercel.json` also sends the `noindex` header with every file.
 
 **4. Wire them.** Once the web app has its final URL, put it in the API's `WEB_ORIGIN` and redeploy the API.
 

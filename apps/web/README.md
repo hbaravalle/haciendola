@@ -11,4 +11,4 @@ pnpm dev:web   # http://localhost:5173
 
 | Env variable | Description |
 |---|---|
-| `VITE_API_URL` | API base URL, including `/api`. Defaults to `http://localhost:3000/api`. Vite reads it on startup, so restart `pnpm dev` after changing it |
+| `VITE_API_URL` | API base URL, including `/api`. Defaults to `http://localhost:3000/api`. Vite writes it into the app when it starts or builds: restart `pnpm dev` after changing it, and on Vercel redeploy, or production keeps calling the old URL |
