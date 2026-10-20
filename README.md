@@ -2,7 +2,7 @@
 
 # Haciendola — Product Manager
 
-A product catalog admin for an online store: log in, browse the catalog and create, edit or delete products, with a full password recovery flow by email. The React front end and the Express API live together in one pnpm workspace. Built as my solution to the **Haciendola Full Stack Challenge**.
+A product catalog admin for an online store: try it in one click with a shared demo account, or log in with a code sent by email to get your own copy of the catalog for 24 hours, then browse, create, edit or delete products. The React front end and the Express API live together in one pnpm workspace. Built as my solution to the **Haciendola Full Stack Challenge**.
 
 ![React](https://img.shields.io/badge/React_18-20232A?style=flat-square&logo=react&logoColor=61DAFB)
 ![Redux Toolkit](https://img.shields.io/badge/Redux_Toolkit-764ABC?style=flat-square&logo=redux&logoColor=white)
@@ -11,57 +11,72 @@ A product catalog admin for an online store: log in, browse the catalog and crea
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat-square&logo=vite&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white)
 ![Express](https://img.shields.io/badge/Express-000000?style=flat-square&logo=express&logoColor=white)
-![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=flat-square&logo=mysql&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)
 ![Sequelize](https://img.shields.io/badge/Sequelize-52B0E7?style=flat-square&logo=sequelize&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-000000?style=flat-square&logo=jsonwebtokens&logoColor=white)
+![Resend](https://img.shields.io/badge/Resend-000000?style=flat-square&logo=resend&logoColor=white)
 ![pnpm](https://img.shields.io/badge/pnpm_workspaces-F69220?style=flat-square&logo=pnpm&logoColor=white)
 
 ## The challenge
 
-Build a full stack app for managing an online store's products: users log in, see the catalog and create, edit or delete products. The challenge shipped with a catalog of **263 real products** from a stationery store, exported in a Shopify-style format (handle, SKU, barcode, grams, stock, price and compare-at price), which seeds the database.
+Build a full stack app for managing an online store's products: users log in, see the catalog and create, edit or delete products. The challenge shipped with a catalog of **263 real products** from a stationery store, exported in a Shopify-style format (handle, SKU, barcode, grams, stock, price and compare-at price), which seeds the database. The original catalog was in Spanish; titles, handles and descriptions are now translated to English, keeping the HTML of each description and every SKU, barcode and price as they were.
 
 ## 🧑‍💻 User stories
 
-- As a new admin, I want to **create an account**, so I can get into the catalog.
-- As an admin, I want to **log in with my username or my email**.
-- As an admin who forgot my password, I want to **recover it in three steps**: enter my email, type the code I received (or ask for a new one) and choose a new password.
-- As an admin, I want to **browse the catalog ten products at a time**, newest first, with each product's title, SKU, barcode and prices at a glance.
+- As an admin, I want to **log in with just my email**: I type it, get a code in my inbox and type the code. No password to remember or recover.
+- As a new admin, I want **the same steps to create my account**, so there is no separate sign-up form.
+- As a visitor checking out the project, I want to **try it in one click**, without giving out my email.
+- As an admin who signs in with my email, I want **my own copy of the catalog**, so nobody else's changes get in the way.
+- As a visitor who left my email, I want **my account deleted after a day**, so nothing I leave behind is kept.
+- As an admin, I want to **browse the catalog ten products at a time**, newest first, with each product's title, prices, stock, SKU and barcode at a glance.
 - As an admin, I want to **create a product** from a form in a modal, without leaving the list.
 - As an admin, I want to **edit a product** with its current data already filled in.
-- As an admin, I want to **confirm before deleting a product**, and have deleted products kept in the database in case I need them back.
+- As an admin, I want to **confirm before deleting a product**, seeing which one I'm about to delete.
 - As an admin, I want **a short message after every action**, so I know whether it worked.
 - As the store owner, I want **only logged-in users to read or change products**, and anyone else sent to the login page.
 - As a developer, I want to **find a product by its SKU or by its handle**, the two IDs a store team uses.
 
 ## Design & interaction
 
-**Admins never lose their place.** Creating, editing and deleting happen in modals on top of the list. After each change, the page you were on reloads from the API, so the list stays current without sending you back to page one.
+**Admins never lose their place.** Creating, editing and deleting happen in modals on top of the list, opened from the **New product** button or each card's actions menu. After each change, the page you were on reloads from the API, so the list stays current without sending you back to page one. Deleting the last product of a page steps back to the previous one.
 
-**Recovery that follows the browser.** Each step of the password recovery has its own URL (`/auth/forgot-password`, `/auth/forgot-password/otp`, `/auth/new-password`), so the back button moves between steps as users expect. The code screen offers to resend the email, and the email itself is carried from one step to the next, so users type it once.
+**A catalog that doesn't jump.** Products show as cards in two columns (one on narrow screens). While a page loads, skeleton cards with the same height as the real ones hold the layout; they only appear if the page takes more than 150 ms, so fast responses don't flash them, and an answer for a page you already left is ignored.
 
-**A code input built for codes.** The one-time code has one box per character and turns letters into capitals as you type, matching the codes the API sends. The form checks the code's length against the shared package, the same value the API uses to generate it.
+**One form for creating and editing.** The same modal handles both, grouped into details, identifiers, and pricing and inventory. Required fields are marked, numbers use numeric inputs with their unit (`$`, `g`) inside the field, Enter saves, and while creating, the handle is filled in from the title until you edit it. Errors from the API, such as a SKU already in the catalog, show their own message.
 
-**Every action answers.** Each create, edit, delete, login or recovery step ends in a toast that says whether it worked, and deleting asks for confirmation first.
+**A login that follows the browser.** The email and the code each have their own URL (`/login`, `/login/code`), so the back button moves between steps as users expect. The email is carried to the code step, so users type it once, and the code screen offers to resend it after a short wait.
+
+**A code input built for codes.** The one-time code has one box per digit: typing moves to the next box, Backspace goes back, and pasting the code (or the phone's one-time-code autofill) fills every box at once. The last digit signs in without pressing the button. The number of boxes and the resend wait come from the shared package, the same values the API uses.
+
+**Every action answers.** Each create, edit, delete or login step ends in a toast that says whether it worked, and deleting asks for confirmation first.
 
 ## The key decision: one repository
 
 The front end and the API started in 2024 as two separate repositories. In 2026 I brought them together in one pnpm workspace, keeping the full history of both, for the same reason I did it in [Red Atlas](https://github.com/hbaravalle/red-atlas): the contract between the two apps belongs in one place.
 
-That decision found a real bug. When editing a product, the web app sent `comparePrice` while the API expected `compare_price`, so **changes to the compare-at price were silently ignored**. Now `@haciendola/shared` defines the product fields, the page size and the length of the one-time code, and both apps read them from there.
+That decision found a real bug. When editing a product, the web app sent `comparePrice` while the API expected `compare_price`, so **changes to the compare-at price were silently ignored**. Now `@haciendola/shared` defines the product fields, the page size, the length of the one-time code, the wait before asking for a new one and the demo account's email, and both apps read them from there.
 
 ## More decisions
 
-**Every product route is protected.** Product endpoints require a valid JWT (`express-jwt`), and a dedicated middleware turns token errors into clean `401` answers. Only registration, login and the password reset flow are public.
+**Every product route is protected.** Product endpoints require a valid JWT (`express-jwt`), and a dedicated middleware turns token errors into clean `401` answers. Only the login routes are public. A session lasts until its account is deleted, 24 hours after sign-up, or seven days for the demo account.
 
-**Passwords never leave the model unhashed.** A Sequelize `beforeSave` hook hashes the password with bcrypt whenever it changes, so registration, seeders and password resets all go through the same path.
+**No passwords at all.** The API emails a 6-digit code through [Resend](https://resend.com), and typing it is the only way in. With nothing to store, there is no password to leak, reuse or reset. The same request works for an email that has no account yet: the account is created when its code is verified, so there is no sign-up form and the API never tells anyone whether an email is registered.
 
-**Password reset with a one-time code.** Instead of a reset link, the API emails a 6-character code (Nodemailer, tested against a Mailtrap sandbox). The code is stored on the user, checked in a separate step so the UI can confirm it before asking for the new password, and cleared once the password changes.
+**Codes that can't be guessed or reused.** Codes live in their own `login_codes` table, apart from users, and only an HMAC of each code is stored. A code expires after 10 minutes, works once (two requests with the same code can't both log in) and locks after 5 wrong tries. A new code for the same email can be asked for once a minute, so each minute allows at most 5 guesses, and every login route is also rate-limited by IP (`express-rate-limit`). Without a Resend key, the API prints the code in its console instead of emailing it, so the login can be tried locally without an email account.
 
-**Two ways to address a product.** Store teams think in SKUs and URLs think in handles, so `GET`, `PUT` and `DELETE /products/:product` accept either one. The API picks the column from the value (digits mean SKU), because comparing a handle with the numeric SKU column makes MySQL reject updates and deletes.
+**A catalog per account.** Every product belongs to a user, and every product query is filtered by the user in the token. A new account starts with its own copy of the 263 seed products, created in the same transaction as the user, so what one person creates, edits or deletes never reaches anyone else. Handles, SKUs and barcodes are unique within a catalog, ignoring deleted products, so every catalog can hold the same products and a deleted one can be created again.
 
-**Soft delete.** The product model is `paranoid`: deleting sets `deletedAt` instead of removing the row, so a mistake in the admin can be undone in the database.
+**Accounts that delete themselves.** Accounts created with an email last 24 hours. An hourly sweep inside the API deletes expired accounts for good, with their catalogs (through an `ON DELETE CASCADE` foreign key) and any unused login codes, so no cron job is needed. Sessions never outlive their account: the token expires when the account does, and the web app sends the user back to the login when it gets a `401`. The sidebar shows when the account will be deleted.
 
-**One command to a working database.** `pnpm db:init` creates the MySQL database if it doesn't exist, syncs the models and loads the 263 products and three test users.
+**A database role that can only touch rows.** The API connects as `haciendola_app`, a role that can read and write the three tables but can't create or drop tables, create databases or roles, or bypass row security. The owner role is kept in `DATABASE_ADMIN_URL` for the seeders, which recreate the tables, and default privileges keep the grants on the recreated tables. `pnpm db:app-role` creates the role (or rotates its password) on each Neon branch.
+
+**A demo that skips the inbox.** The login screen opens with a **Try the demo** button that signs in to a shared demo account, so anyone reviewing the project sees the catalog in one click without handing over an email. Its catalog is shared by every visitor, so it goes back to the seed products when someone opens the demo more than 24 hours after the last reset, with no scheduled job. Signing in with an email is what gets you a private catalog.
+
+**Two ways to address a product.** Store teams think in SKUs and URLs think in handles, so `GET`, `PUT` and `DELETE /products/:product` accept either one. The API picks the column from the value (digits mean SKU), because comparing a handle with the numeric SKU column makes Postgres reject the query.
+
+**Soft delete.** The product model is `paranoid`: deleting sets `deletedAt` instead of removing the row, so a mistake in the admin can be undone in the database while the account exists. Deleting an account, or resetting the demo, removes its products for good.
+
+**One command to a working database.** `pnpm db:init` syncs the models against the Postgres database (a [Neon](https://neon.tech) project works out of the box) and creates three test users, each with their own copy of the 263 products. Like any account, they're deleted 24 hours later; `pnpm seed` brings them back.
 
 ## 🧱 Architecture
 
@@ -71,26 +86,31 @@ haciendola/
 │   ├── web/                  # React 18 + Vite + Redux Toolkit + React Router + Sass modules
 │   │   └── src/
 │   │       ├── config.js     # API base URL (VITE_API_URL)
-│   │       ├── redux/        # Store and auth slice (token, email)
-│   │       ├── pages/        # Login, Register, ResetPassword (steps), NewPassword, ProductList
-│   │       ├── components/   # FormGroup, FormGroupOTP, Paginate, ProductCard, Sidebar, ProtectedRoute
+│   │       ├── redux/        # Store and auth slice (session, account expiry, email waiting for its code)
+│   │       ├── pages/        # Login (demo, email and code steps), ProductList
+│   │       ├── components/   # ProductCard and its skeleton, ProductFormModal, DeleteProductModal,
+│   │       │                 # FormGroup, FormGroupOTP, Paginate, Sidebar, ProtectedRoute
 │   │       └── layouts/      # Shared layout for the auth screens
-│   └── api/                  # Node.js + Express + Sequelize + MySQL
+│   └── api/                  # Node.js + Express + Sequelize + PostgreSQL
+│       ├── api/index.js      # Vercel function: the same Express app
 │       └── src/
-│           ├── routes/       # auth and product routers (JWT on every product route)
+│           ├── app.js        # Express app, shared by the local server and Vercel
+│           ├── server.js     # Local server with the hourly cleanup
+│           ├── routes/       # auth, product and cron routers (JWT on every product route)
 │           ├── controllers/  # HTTP layer: read the request, call the model, pick the status
-│           ├── models/       # User (bcrypt hook) and Product (paranoid)
-│           ├── middlewares/  # JWT error handler, base URL for pagination links
-│           ├── scripts/      # Create the database if it doesn't exist
-│           └── seeders/      # 263 products + 3 test users
+│           ├── services/     # Login codes and sessions, catalog copies, account cleanup, email
+│           ├── models/       # User, LoginCode, Product (paranoid, one catalog per user), RateLimit
+│           ├── middlewares/  # JWT error handler, rate limits by IP, base URL for pagination links
+│           ├── scripts/      # Create the API's database role
+│           └── seeders/      # 263 seed products, copied into each test user's catalog
 ├── packages/
-│   └── shared/               # Product fields, page size, code length and API types
+│   └── shared/               # Product fields, page size, login code rules, demo email and API types
 └── pnpm-workspace.yaml
 ```
 
-**Global state only where it's shared.** Redux Toolkit holds the session (token and email), which the routes, the sidebar and every API call need. Everything else, such as the current page and the modals, stays local to the page that uses it.
+**Global state only where it's shared.** Redux Toolkit holds the session (token, email and when the account is deleted), which the routes, the sidebar and every API call need. Everything else, such as the current page and the modals, stays local to the page that uses it.
 
-**Layers in the API.** Routes map URLs and apply authentication, controllers deal with HTTP and pick the status code, and one helper (`network/response.js`) gives every success (`{ status, result }`) and error (`{ status, message }`) the same shape.
+**Layers in the API.** Routes map URLs and apply authentication, controllers deal with HTTP and pick the status code, services hold the login, catalog and cleanup rules, and one helper (`network/response.js`) gives every success (`{ status, result }`) and error (`{ status, message }`) the same shape.
 
 ## 📖 API reference
 
@@ -100,41 +120,43 @@ Base URL: `http://localhost:3000/api`
 
 | Method | Route | Description |
 |---|---|---|
-| `POST` | `/auth/register` | Create a user (`name`, `username`, `email`, `password`) |
-| `POST` | `/auth/login` | Log in with `user` (username or email) and `password`. Returns a JWT |
-| `POST` | `/auth/otp` | Email a one-time code to `email` |
-| `POST` | `/auth/otp-check` | Check that `otp` matches the code sent to `email` |
-| `POST` | `/auth/reset-password` | Set `newPassword` for `email`, given a valid `otp` |
+| `POST` | `/auth/otp` | Email a login code to `email`. Answers `429` with `Retry-After` if asked again within a minute |
+| `POST` | `/auth/verify` | Check `otp` for `email` and return `{ token, email, accountExpiresAt }`, creating the account and its catalog on first login. A wrong, expired or used code answers `401` |
+| `POST` | `/auth/demo` | Return `{ token, email, accountExpiresAt: null }` for the shared demo account, no email needed |
 
-**Products (require `Authorization: Bearer <token>`)**
+Every auth route is also limited by IP and answers `429` past the limit.
+
+**Products (require `Authorization: Bearer <token>`, and only reach the catalog of the token's user)**
 
 | Method | Route | Description |
 |---|---|---|
 | `GET` | `/products?page=1` | Ten products per page, newest first, with `count`, `totalPages`, `next` and `prev` |
 | `GET` | `/products/:product` | One product by SKU or handle |
-| `POST` | `/products` | Create a product |
+| `POST` | `/products` | Create a product. A handle, SKU or barcode already in the catalog answers `409` |
 | `PUT` | `/products/:product` | Update the fields sent, by SKU or handle |
 | `DELETE` | `/products/:product` | Soft-delete a product by SKU or handle |
 
-Unknown products answer `404`, and a missing or invalid token answers `401`.
+Unknown products answer `404`, and a missing, invalid or expired token answers `401`. An empty catalog answers page 1 with no products.
 
 ## 🚀 Running locally
 
-**Prerequisites:** Node.js 20.19+, [pnpm](https://pnpm.io/installation) and a MySQL server. To test the password reset, a free [Mailtrap](https://mailtrap.io) sandbox inbox.
+**Prerequisites:** Node.js 20.19+, [pnpm](https://pnpm.io/installation) and a PostgreSQL database, such as a free [Neon](https://neon.tech) project. To receive the login codes by email, a free [Resend](https://resend.com) account. Without it, the codes appear in the API console.
 
 ```bash
 git clone https://github.com/hbaravalle/haciendola.git
 cd haciendola
 pnpm install
 
-cp apps/api/.env.example apps/api/.env   # database, JWT secret, test user password, Mailtrap
+cp apps/api/.env.example apps/api/.env   # database, JWT secret, Resend (optional)
 cp apps/web/.env.example apps/web/.env   # optional: VITE_API_URL
 
-pnpm db:init   # create the database and load products and test users
+pnpm db:init   # create the tables and load products and test users
 pnpm dev       # API on localhost:3000 and web app on localhost:5173
 ```
 
-**Test users** (password: the value of `SEEDER_USER_PASS`): `leiaorgana`, `lukeskywalker` and `hansolo`, or their emails `leia@`, `luke@` and `han@starwars.com`.
+Optionally, `pnpm db:app-role -- --write-env` makes the API connect with a role that can only read and write rows, and keeps the owner connection for the seeders.
+
+**Trying it:** the **Try the demo** button needs nothing else. The test users `leia@`, `luke@` and `han@starwars.com` don't have real inboxes, so log in as them without a Resend key and read the code in the API console, or log in with your own email.
 
 | Script | Description |
 |---|---|
@@ -142,23 +164,47 @@ pnpm dev       # API on localhost:3000 and web app on localhost:5173
 | `pnpm dev:web` / `pnpm dev:api` | Run one app |
 | `pnpm build` | Build the web app |
 | `pnpm lint` | Lint the web app |
-| `pnpm db:init` | Create the database and load the seed data |
+| `pnpm db:init` | Create the tables and load the seed data |
+| `pnpm db:app-role` | Create the API's database role on the current branch. Add `-- --write-env` to save it in `.env` |
 | `pnpm seed` | Reset products and users to the seed data |
 
-### Password reset demo
+## ▲ Deploying to Vercel
 
-https://github.com/hbaravalle/backend-haciendola-challenge/assets/24690415/9cc698cc-ebc4-44e1-8b56-2fa2b033010a
+Both apps deploy to Vercel as two projects from this repository, with the database on Neon.
+
+**Why the API changes shape there.** On Vercel the API runs as a function, not a server that stays up, so three things that worked in memory move elsewhere: the hourly cleanup becomes a **Vercel Cron** job (`/api/cron/cleanup`, protected by `CRON_SECRET`) backed by a sweep on every login, the IP rate limits are counted in a `rate_limits` table that every instance shares, and Express trusts Vercel's proxy so those limits see the visitor's IP. The Hobby plan only allows daily crons, which is why logins also sweep.
+
+**1. Database (Neon `main` branch).** Copy the `main` branch's owner connection string from Neon, pooled (the host with `-pooler`, since functions open many short connections), and pass it on the command line so your local `.env` keeps pointing at `dev`:
+
+```bash
+DATABASE_ADMIN_URL="postgresql://neondb_owner:…@…-pooler…/neondb?sslmode=verify-full" pnpm db:init
+DATABASE_ADMIN_URL="postgresql://neondb_owner:…@…-pooler…/neondb?sslmode=verify-full" pnpm db:app-role
+```
+
+The second command prints the `haciendola_app` connection string for the API. Run `db:init` only this once: like `pnpm seed`, it drops and recreates the tables.
+
+**2. API project.** New Vercel project from the repo, with **Root Directory** `apps/api` and Node.js 22. `apps/api/vercel.json` routes every request to the function and schedules the cron. Environment variables:
+
+| Variable | Value |
+|---|---|
+| `DATABASE_URL` | The `haciendola_app` connection string from step 1 |
+| `JWT_SECRET` | A new long random string, different from development |
+| `RESEND_API_KEY`, `MAIL_FROM` | As in development |
+| `WEB_ORIGIN` | The web app's URL, e.g. `https://haciendola.vercel.app` |
+| `CRON_SECRET` | A long random string; Vercel sends it to the cron route |
+
+**3. Web project.** New Vercel project from the repo, with **Root Directory** `apps/web` (Vite is detected). `apps/web/vercel.json` sends every route to `index.html`, so reloading `/login/code` works. Set `VITE_API_URL` to the API's URL plus `/api`, e.g. `https://haciendola-api.vercel.app/api`.
+
+**4. Wire them.** Once the web app has its final URL, put it in the API's `WEB_ORIGIN` and redeploy the API.
 
 ## 🔭 What's next
 
 The first version was delivered in 2024. Moving to a monorepo fixed the configuration (API URL, ports), the field-name bug and the product lookup. These are the next steps:
 
 - **Validate input** at the edge with Zod, reusing the shared package.
-- **Expire the one-time code** and limit attempts, so a code can't be guessed or reused later.
-- **Keep the session across reloads** by persisting the token, and check its expiry.
-- **Split `ProductList`** into smaller components and move form state into React Hook Form, with RTK Query for server data.
+- **Keep the session across reloads** by persisting the token. Today a reload signs you out.
+- **Move server data into RTK Query**, so loading, refetching after changes and stale answers are handled in one place instead of inside `ProductList`.
 - **Add tests** for the auth flow and the product endpoints.
-- **Deploy** with Postgres on Neon, as in Red Atlas, so there is a live demo.
 
 ## 👤 Author
 
