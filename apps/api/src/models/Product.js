@@ -5,13 +5,17 @@ class Product extends Model {
     Product.init(
       {
         id: {
-          type: DataTypes.BIGINT.UNSIGNED,
+          type: DataTypes.BIGINT,
           primaryKey: true,
           autoIncrement: true,
         },
+        // Each user has their own copy of the catalog.
+        user_id: {
+          type: DataTypes.BIGINT,
+          allowNull: false,
+        },
         handle: {
           type: DataTypes.STRING,
-          unique: true,
           allowNull: false,
         },
         title: {
@@ -22,27 +26,25 @@ class Product extends Model {
           type: DataTypes.TEXT,
         },
         sku: {
-          type: DataTypes.BIGINT.UNSIGNED,
-          unique: true,
+          type: DataTypes.BIGINT,
           allowNull: false,
         },
         grams: {
-          type: DataTypes.SMALLINT.UNSIGNED,
+          type: DataTypes.INTEGER,
         },
         stock: {
-          type: DataTypes.SMALLINT.UNSIGNED,
+          type: DataTypes.INTEGER,
         },
         price: {
-          type: DataTypes.SMALLINT.UNSIGNED,
+          type: DataTypes.INTEGER,
           allowNull: false,
         },
         compare_price: {
-          type: DataTypes.INTEGER.UNSIGNED,
+          type: DataTypes.INTEGER,
         },
         barcode: {
-          type: DataTypes.BIGINT.UNSIGNED,
+          type: DataTypes.BIGINT,
           default: null,
-          unique: true,
           validate: {
             isNumeric: true,
           },
@@ -57,6 +59,14 @@ class Product extends Model {
         timestamps: true,
         underscored: true,
         paranoid: true,
+        // Handles, SKUs and barcodes are unique within a user's catalog, so
+        // every catalog can hold the same products. Deleted products don't
+        // count, so a deleted product can be created again.
+        indexes: ["handle", "sku", "barcode"].map((field) => ({
+          unique: true,
+          fields: ["user_id", field],
+          where: { deleted_at: null },
+        })),
         hooks: {
           beforeSave: (product) => {
             if (product.barcode !== null) {
