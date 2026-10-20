@@ -23,6 +23,11 @@ app.use(
     origin: process.env.WEB_ORIGIN ? process.env.WEB_ORIGIN.split(',') : true,
   }),
 );
+// A demo project: keep every API URL out of search results.
+app.use((req, res, next) => {
+  res.set('X-Robots-Tag', 'noindex, nofollow');
+  next();
+});
 app.use(express.json());
 app.use(attachBaseUrl);
 
