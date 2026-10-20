@@ -96,7 +96,8 @@ haciendola/
 │   │   ├── public/           # Favicons and logo
 │   │   └── src/
 │   │       ├── config.js     # API base URL (VITE_API_URL)
-│   │       ├── redux/        # Store and auth slice (session, account expiry, email waiting for its code)
+│   │       ├── redux/        # Store, auth slice (session, account expiry, email waiting for its code)
+│   │       │                 # and the RTK Query API slice (every request to the API)
 │   │       ├── pages/        # Login (demo, email and code steps), ProductList
 │   │       ├── components/   # ProductCard and its skeleton, ProductFormModal, DeleteProductModal,
 │   │       │                 # FormGroup, FormGroupOTP, Paginate, Sidebar, ProtectedRoute
@@ -121,6 +122,8 @@ haciendola/
 ```
 
 **Global state only where it's shared.** Redux Toolkit holds the session (token, email and when the account is deleted), which the routes, the sidebar and every API call need. Everything else, such as the current page and the modals, stays local to the page that uses it.
+
+**Server data in RTK Query.** Every request goes through one API slice, which adds the token, unwraps the API's `{ status, result }` answers and signs the user out on a `401` from an expired session. Pages are cached per page number and tagged as one list, so creating, editing or deleting a product refetches the page on screen and drops the rest, and an answer for a page you already left never reaches the screen. When the session changes, the cache is emptied, since every account has its own catalog.
 
 **Layers in the API.** Routes map URLs and apply authentication, controllers deal with HTTP and pick the status code, services hold the login, catalog and cleanup rules, and one helper (`network/response.js`) gives every success (`{ status, result }`) and error (`{ status, message }`) the same shape.
 
@@ -223,7 +226,6 @@ The first version was delivered in 2024. Moving to a monorepo fixed the configur
 
 - **Validate input** at the edge with Zod, reusing the shared package.
 - **Keep the session across reloads** by persisting the token. Today a reload signs you out.
-- **Move server data into RTK Query**, so loading, refetching after changes and stale answers are handled in one place instead of inside `ProductList`.
 - **Add tests** for the auth flow and the product endpoints.
 
 ## 👤 Author

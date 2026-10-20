@@ -4,15 +4,16 @@ import { Navigate, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { OTP_LENGTH, OTP_RESEND_SECONDS } from "@haciendola/shared";
 import { login } from "../../../redux/authSlice";
+import { errorMessage, useVerifyCodeMutation } from "../../../redux/api";
 import FormGroupOTP from "../../../components/FormGroupOTP";
-import { API_URL } from "../../../config.js";
-import { requestCode } from "../requestCode";
+import { useRequestCode } from "../useRequestCode";
 
 function EnterCode() {
   const email = useSelector((state) => state.auth.pendingEmail);
   const token = useSelector((state) => state.auth.token);
   const [code, setCode] = useState("");
-  const [verifying, setVerifying] = useState(false);
+  const [verifyCode, { isLoading: verifying }] = useVerifyCodeMutation();
+  const [requestCode] = useRequestCode();
   const [resendIn, setResendIn] = useState(OTP_RESEND_SECONDS);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -24,29 +25,16 @@ function EnterCode() {
   }, [resendIn]);
 
   const verify = async (fullCode) => {
-    setVerifying(true);
     try {
-      const response = await fetch(`${API_URL}/auth/verify`, {
-        method: "POST",
-        headers: { "Content-type": "application/json" },
-        body: JSON.stringify({ email, otp: fullCode }),
-      });
-      const data = await response.json();
-
-      if (data.status === 200) {
-        // Storing the session clears the pending email; the redirect below
-        // then takes the user to the catalog.
-        dispatch(login(data.result));
-        toast("Welcome!", { icon: "✨" });
-        return;
-      }
-      toast.error(data.message ?? "Invalid code");
+      const session = await verifyCode({ email, otp: fullCode }).unwrap();
+      // Storing the session clears the pending email; the redirect below
+      // then takes the user to the catalog.
+      dispatch(login(session));
+      toast("Welcome!", { icon: "✨" });
+    } catch (error) {
+      toast.error(errorMessage(error, "Invalid code"));
       setCode("");
-    } catch (err) {
-      console.log(err);
-      toast.error("Server error. Try again");
     }
-    setVerifying(false);
   };
 
   // Send the code as soon as the last digit is typed or pasted.

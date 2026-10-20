@@ -3,47 +3,36 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { login, setPendingEmail } from "../../../redux/authSlice";
+import { errorMessage, useStartDemoMutation } from "../../../redux/api";
 import FormGroup from "../../../components/FormGroup";
-import { API_URL } from "../../../config.js";
-import { requestCode } from "../requestCode";
+import { useRequestCode } from "../useRequestCode";
 import styles from "./EnterEmail.module.scss";
 
 function EnterEmail() {
   const pendingEmail = useSelector((state) => state.auth.pendingEmail);
   const [email, setEmail] = useState(pendingEmail ?? "");
-  const [sending, setSending] = useState(false);
-  const [startingDemo, setStartingDemo] = useState(false);
+  const [requestCode, { isLoading: sending }] = useRequestCode();
+  const [startDemo, { isLoading: startingDemo }] = useStartDemoMutation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSending(true);
-    const sent = await requestCode(email);
-    setSending(false);
-    if (sent) {
+    if (await requestCode(email)) {
       dispatch(setPendingEmail(email.trim().toLowerCase()));
       navigate("/login/code");
     }
   };
 
   const handleDemo = async () => {
-    setStartingDemo(true);
     try {
-      const response = await fetch(`${API_URL}/auth/demo`, { method: "POST" });
-      const data = await response.json();
-      if (data.status === 200) {
-        dispatch(login(data.result));
-        toast("Welcome to the demo!", { icon: "✨" });
-        navigate("/");
-        return;
-      }
-      toast.error(data.message ?? "Could not start the demo. Try again");
-    } catch (err) {
-      console.log(err);
-      toast.error("Server error. Try again");
+      const session = await startDemo().unwrap();
+      dispatch(login(session));
+      toast("Welcome to the demo!", { icon: "✨" });
+      navigate("/");
+    } catch (error) {
+      toast.error(errorMessage(error, "Could not start the demo. Try again"));
     }
-    setStartingDemo(false);
   };
 
   return (
