@@ -1,7 +1,7 @@
-const handleJWTError = require("../middlewares/jwtErrorHandler");
-const productController = require("../controllers/productController");
-const { expressjwt } = require("express-jwt");
-const express = require("express");
+import handleJWTError from "../middlewares/jwtErrorHandler.js";
+import * as productController from "../controllers/productController.js";
+import { expressjwt } from "express-jwt";
+import express from "express";
 const router = express.Router();
 
 router.get(
@@ -35,4 +35,4 @@ router.delete(
   productController.destroy
 );
 
-module.exports = router;
+export default router;

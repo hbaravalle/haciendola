@@ -6,14 +6,14 @@
 //
 // Usage: node src/scripts/createAppRole.js [--write-env]
 // Run it once per Neon branch: roles live in each branch.
-require("dotenv").config();
-const crypto = require("crypto");
-const fs = require("fs");
-const path = require("path");
-const { Client } = require("pg");
+import "dotenv/config";
+import crypto from "crypto";
+import fs from "fs";
+import path from "path";
+import { Client } from "pg";
 
 const ROLE = "haciendola_app";
-const ENV_FILE = path.join(__dirname, "../../.env");
+const ENV_FILE = path.join(import.meta.dirname, "../../.env");
 
 async function createAppRole() {
   const adminUrl = process.env.DATABASE_ADMIN_URL || process.env.DATABASE_URL;

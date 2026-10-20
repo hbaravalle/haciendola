@@ -1,6 +1,6 @@
-const { rateLimit } = require("express-rate-limit");
-const { sequelize, RateLimit } = require("../models");
-const response = require("../network/response");
+import { rateLimit } from "express-rate-limit";
+import { sequelize, RateLimit } from "../models/index.js";
+import * as response from "../network/response.js";
 
 // express-rate-limit store backed by the rate_limits table, so the counts are
 // shared by every instance of the API (Vercel runs many, each with its own
@@ -54,4 +54,4 @@ function limitPerIp(name, limit, windowMinutes) {
   });
 }
 
-module.exports = { limitPerIp };
+export { limitPerIp };

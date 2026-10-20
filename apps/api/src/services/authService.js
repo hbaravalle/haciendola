@@ -1,10 +1,16 @@
-const crypto = require("crypto");
-const jwt = require("jsonwebtoken");
-const { OTP_LENGTH, OTP_RESEND_SECONDS, DEMO_EMAIL } = require("@haciendola/shared");
-const { sequelize, User, LoginCode } = require("../models");
-const mailService = require("./mailService");
-const catalogService = require("./catalogService");
-const cleanupService = require("./cleanupService");
+import crypto from "crypto";
+import jwt from "jsonwebtoken";
+import {
+  OTP_LENGTH,
+  OTP_RESEND_SECONDS,
+  DEMO_EMAIL,
+  emailSchema,
+  otpSchema,
+} from "@haciendola/shared";
+import { sequelize, User, LoginCode } from "../models/index.js";
+import * as mailService from "./mailService.js";
+import * as catalogService from "./catalogService.js";
+import * as cleanupService from "./cleanupService.js";
 
 const CODE_MINUTES_VALID = 10;
 const MAX_ATTEMPTS = 5;
@@ -20,12 +26,10 @@ class AuthError extends Error {
   }
 }
 
-function normalizeEmail(email) {
-  return typeof email === "string" ? email.trim().toLowerCase() : "";
-}
-
-function isEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254;
+// The email trimmed and lowercased, or null if it isn't a valid one.
+function readEmail(rawEmail) {
+  const parsed = emailSchema.safeParse(rawEmail);
+  return parsed.success ? parsed.data : null;
 }
 
 // HMAC with the server secret, so a leaked table doesn't reveal the codes and
@@ -47,8 +51,8 @@ function codesMatch(email, code, storedHash) {
 // account is created when the code is verified. Asking again replaces the
 // previous code, once the resend wait is over.
 async function requestCode(rawEmail) {
-  const email = normalizeEmail(rawEmail);
-  if (!isEmail(email)) throw new AuthError("Enter a valid email", 400);
+  const email = readEmail(rawEmail);
+  if (!email) throw new AuthError("Enter a valid email", 400);
   // The demo inbox doesn't exist, so a code sent there would only bounce.
   if (email === DEMO_EMAIL) {
     throw new AuthError("Use the demo button to try the demo account", 400);
@@ -87,8 +91,13 @@ async function requestCode(rawEmail) {
 // locked after too many wrong tries so it can't be guessed.
 async function verifyCode(rawEmail, code) {
   await cleanupService.sweepIfDue();
-  const email = normalizeEmail(rawEmail);
+  // Something that isn't a code at all doesn't use up one of the tries.
+  if (!otpSchema.safeParse(code).success) {
+    throw new AuthError(`Enter the ${OTP_LENGTH}-digit code`, 400);
+  }
+  const email = readEmail(rawEmail);
   const invalid = new AuthError("Invalid or expired code", 401);
+  if (!email) throw invalid;
 
   const loginCode = await LoginCode.findByPk(email);
   if (!loginCode) throw invalid;
@@ -178,4 +187,4 @@ function createSession(user) {
   };
 }
 
-module.exports = { AuthError, requestCode, verifyCode, startDemoSession };
+export { AuthError, requestCode, verifyCode, startDemoSession };

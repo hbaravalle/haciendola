@@ -1,4 +1,4 @@
-const { Model, DataTypes } = require("sequelize");
+import { Model, DataTypes } from "sequelize";
 
 // The one-time code waiting to be typed for an email. Codes live apart from
 // users because an email gets a code before its account exists: the account is
@@ -36,4 +36,4 @@ class LoginCode extends Model {
   }
 }
 
-module.exports = LoginCode;
+export default LoginCode;

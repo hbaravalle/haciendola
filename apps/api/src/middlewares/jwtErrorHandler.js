@@ -1,4 +1,4 @@
-const response = require("../network/response");
+import * as response from "../network/response.js";
 
 const handleJWTError = (err, req, res, next) => {
   if (err) {
@@ -8,4 +8,4 @@ const handleJWTError = (err, req, res, next) => {
   }
 };
 
-module.exports = handleJWTError;
+export default handleJWTError;

@@ -1,6 +1,6 @@
-const { Op } = require("sequelize");
-const { DEMO_EMAIL } = require("@haciendola/shared");
-const { User, LoginCode, RateLimit } = require("../models");
+import { Op } from "sequelize";
+import { DEMO_EMAIL } from "@haciendola/shared";
+import { User, LoginCode, RateLimit } from "../models/index.js";
 
 // Accounts created with an email live this long, catalog included. Visitors
 // try the app with real inboxes, so nothing they leave behind is kept.
@@ -52,7 +52,7 @@ function scheduleCleanup() {
   setInterval(sweepIfDue, SWEEP_MINUTES * 60_000).unref();
 }
 
-module.exports = {
+export {
   accountExpiresAt,
   isExpired,
   deleteExpiredAccounts,

@@ -1,10 +1,11 @@
-const response = require("../network/response");
-const { Product } = require("../models");
-const {
-  PRODUCT_FIELDS,
-  NUMERIC_PRODUCT_FIELDS,
+import * as response from "../network/response.js";
+import { Product } from "../models/index.js";
+import {
   PAGE_SIZE,
-} = require("@haciendola/shared");
+  productSchema,
+  productChangesSchema,
+  comparePriceIssue,
+} from "@haciendola/shared";
 
 // Every product query is limited to the catalog of the logged-in user, whose
 // id is the token's subject.
@@ -21,15 +22,11 @@ function findBySkuOrHandle(req) {
   return { ...column, ...ownedBy(req) };
 }
 
-// Forms send numbers as strings and leave optional fields empty. An empty or
-// missing number is stored as null, not 0, so two products without a barcode
-// don't collide.
-function readField(body, field) {
-  const value = body[field];
-  if (!NUMERIC_PRODUCT_FIELDS.includes(field)) return value;
-  return value === undefined || value === null || value === ""
-    ? null
-    : Number(value);
+// Answers a request that failed validation with the first problem found, e.g.
+// "Price is required". The web app checks its forms with the same schemas, so
+// it usually catches them first.
+function invalid(req, res, error) {
+  return response.error(req, res, error.issues[0].message, 400);
 }
 
 // A handle, SKU or barcode already used in the same catalog.
@@ -99,13 +96,13 @@ async function find(req, res) {
 }
 
 async function create(req, res) {
+  // Numbers sent as strings come out as numbers, and empty optional fields as
+  // null rather than 0, so two products without a barcode don't collide.
+  const parsed = productSchema.safeParse(req.body ?? {});
+  if (!parsed.success) return invalid(req, res, parsed.error);
+
   try {
-    await Product.create({
-      ...Object.fromEntries(
-        PRODUCT_FIELDS.map((field) => [field, readField(req.body, field)])
-      ),
-      ...ownedBy(req),
-    });
+    await Product.create({ ...parsed.data, ...ownedBy(req) });
     return response.success(req, res, "Product created", 201);
   } catch (err) {
     if (isDuplicate(err)) {
@@ -117,6 +114,11 @@ async function create(req, res) {
 }
 
 async function update(req, res) {
+  // Only the fields the request sends are checked and updated.
+  const parsed = productChangesSchema.safeParse(req.body ?? {});
+  if (!parsed.success) return invalid(req, res, parsed.error);
+  const changes = parsed.data;
+
   try {
     const product = await Product.findOne({
       where: findBySkuOrHandle(req),
@@ -125,15 +127,11 @@ async function update(req, res) {
       return response.error(req, res, "Product not found", 404);
     }
 
-    // Only the fields the request sends are updated
-    const updates = {};
-    for (const field of PRODUCT_FIELDS) {
-      if (req.body[field] !== undefined) {
-        updates[field] = readField(req.body, field);
-      }
-    }
+    const saved = { ...product.get({ plain: true }), ...changes };
+    const priceIssue = comparePriceIssue(saved);
+    if (priceIssue) return response.error(req, res, priceIssue, 400);
 
-    await product.update(updates);
+    await product.update(changes);
     return response.success(req, res, "Product updated", 200);
   } catch (err) {
     if (isDuplicate(err)) {
@@ -159,4 +157,4 @@ async function destroy(req, res) {
   }
 }
 
-module.exports = { list, find, create, update, destroy };
+export { list, find, create, update, destroy };

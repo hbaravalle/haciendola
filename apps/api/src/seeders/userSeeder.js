@@ -1,5 +1,5 @@
-const { sequelize, User } = require("../models");
-const catalogService = require("../services/catalogService");
+import { sequelize, User } from "../models/index.js";
+import * as catalogService from "../services/catalogService.js";
 
 async function userSeeder() {
   try {
@@ -22,4 +22,4 @@ async function userSeeder() {
   }
 }
 
-module.exports = userSeeder;
+export default userSeeder;

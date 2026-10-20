@@ -9,13 +9,37 @@ export declare const PRODUCT_FIELDS: readonly [
   'compare_price',
   'barcode',
 ];
-export declare const NUMERIC_PRODUCT_FIELDS: readonly ['sku', 'grams', 'stock', 'price', 'compare_price', 'barcode'];
 export declare const PAGE_SIZE: number;
 export declare const OTP_LENGTH: number;
 export declare const OTP_RESEND_SECONDS: number;
 export declare const DEMO_EMAIL: string;
 
 export type ProductField = (typeof PRODUCT_FIELDS)[number];
+
+/** Product fields as the API stores them, after validation. */
+export interface ProductInput {
+  handle: string;
+  title: string;
+  description?: string | null;
+  sku: number;
+  grams?: number | null;
+  stock?: number | null;
+  price: number;
+  compare_price?: number | null;
+  barcode?: number | null;
+}
+
+/** A whole product, for creating one. Numbers may arrive as strings. */
+export declare const productSchema: import('zod').ZodType<ProductInput>;
+/** Some of a product's fields, for an update. */
+export declare const productChangesSchema: import('zod').ZodType<Partial<ProductInput>>;
+/** Why the compare-at price isn't valid for this product, or null. */
+export declare function comparePriceIssue(product: Partial<ProductInput>): string | null;
+/** Trimmed and lowercased. */
+export declare const emailSchema: import('zod').ZodType<string>;
+export declare const otpSchema: import('zod').ZodType<string>;
+/** The first message for each field of a failed validation. */
+export declare function errorsByField(error: import('zod').ZodError): Record<string, string>;
 
 /** A product as returned by the API. */
 export interface Product {

@@ -37,6 +37,14 @@
       border-color: $color-accent-alternative;
       box-shadow: 0 0 0 3px rgba(44, 39, 193, 0.12);
     }
+
+    &[aria-invalid="true"] {
+      border-color: $color-accent;
+
+      &:focus {
+        box-shadow: 0 0 0 3px rgba(255, 13, 88, 0.12);
+      }
+    }
   }
 
   &__input {
@@ -88,5 +96,10 @@
     margin-top: 0.3rem;
     font-size: 0.75rem;
     color: $color-text-muted;
+
+    &--error {
+      color: darken($color-accent, 10%);
+      font-weight: 500;
+    }
   }
 }

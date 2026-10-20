@@ -2,6 +2,7 @@
   "name": "api",
   "version": "1.0.0",
   "description": "Haciendola REST API: passwordless login by emailed code, JWT sessions and paginated products over PostgreSQL.",
+  "type": "module",
   "main": "src/server.js",
   "scripts": {
     "dev": "node --watch src/server.js",

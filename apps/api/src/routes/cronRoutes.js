@@ -1,7 +1,7 @@
-const crypto = require("crypto");
-const express = require("express");
-const response = require("../network/response");
-const { deleteExpiredAccounts } = require("../services/cleanupService");
+import crypto from "crypto";
+import express from "express";
+import * as response from "../network/response.js";
+import { deleteExpiredAccounts } from "../services/cleanupService.js";
 
 const router = express.Router();
 
@@ -26,4 +26,4 @@ router.get("/cleanup", async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

@@ -1,9 +1,9 @@
-const { Sequelize } = require("sequelize");
-const pg = require("pg");
-const User = require("./User");
-const Product = require("./Product");
-const LoginCode = require("./LoginCode");
-const RateLimit = require("./RateLimit");
+import { Sequelize } from "sequelize";
+import pg from "pg";
+import User from "./User.js";
+import Product from "./Product.js";
+import LoginCode from "./LoginCode.js";
+import RateLimit from "./RateLimit.js";
 
 // pg returns BIGINT (OID 20) as a string. ids, SKUs and barcodes fit in a JS
 // number, so parse them to keep the API returning numbers.
@@ -35,4 +35,4 @@ process.on("exit", () => {
   sequelize.close();
 });
 
-module.exports = { sequelize, User, Product, LoginCode, RateLimit };
+export { sequelize, User, Product, LoginCode, RateLimit };

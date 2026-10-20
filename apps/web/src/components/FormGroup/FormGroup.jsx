@@ -2,8 +2,9 @@ import classNames from "classnames";
 import styles from "./FormGroup.module.scss";
 
 // A labelled input or textarea. `prefix` and `suffix` show a unit inside the
-// field ($, g), `hint` a short note under it. Any other prop (required, min,
-// inputMode, placeholder...) goes straight to the input.
+// field ($, g), `hint` a short note under it, and `error` a problem with the
+// value, shown in place of the hint. Any other prop (required, min, inputMode,
+// placeholder...) goes straight to the input.
 function FormGroup({
   title,
   name,
@@ -13,16 +14,19 @@ function FormGroup({
   prefix,
   suffix,
   hint,
+  error,
   children,
   ...inputProps
 }) {
-  const hintId = hint ? `${name}-hint` : undefined;
+  const note = error ?? hint;
+  const noteId = note ? `${name}-note` : undefined;
   const fieldProps = {
     id: name,
     name,
     value: value ?? "",
     onChange,
-    "aria-describedby": hintId,
+    "aria-describedby": noteId,
+    "aria-invalid": error ? true : undefined,
     ...inputProps,
   };
 
@@ -50,9 +54,14 @@ function FormGroup({
           {suffix && <span className={styles.formGroup__suffix}>{suffix}</span>}
         </div>
       )}
-      {hint && (
-        <small id={hintId} className={styles.formGroup__hint}>
-          {hint}
+      {note && (
+        <small
+          id={noteId}
+          className={classNames(styles.formGroup__hint, {
+            [styles["formGroup__hint--error"]]: error,
+          })}
+        >
+          {note}
         </small>
       )}
       {children}

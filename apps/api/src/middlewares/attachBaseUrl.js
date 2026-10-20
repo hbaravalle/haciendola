@@ -1,4 +1,4 @@
-module.exports = (req, res, next) => {
+export default (req, res, next) => {
   const protocol = req.protocol;
   const host = req.get("host");
   req.completeUrl = `${protocol}://${host}/api${req.baseUrl}`;

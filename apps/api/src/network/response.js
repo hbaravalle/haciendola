@@ -12,4 +12,4 @@ function error(req, res, message = "Internal server error", status = 500) {
   });
 }
 
-module.exports = { success, error };
+export { success, error };

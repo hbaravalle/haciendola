@@ -1,4 +1,4 @@
-const { Resend } = require("resend");
+import { Resend } from "resend";
 
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
@@ -28,4 +28,4 @@ async function sendLoginCode(email, code, minutesValid) {
   }
 }
 
-module.exports = { sendLoginCode };
+export { sendLoginCode };

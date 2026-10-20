@@ -16,6 +16,7 @@ A product catalog admin for an online store: try it in one click with a shared d
 ![Express](https://img.shields.io/badge/Express-000000?style=flat-square&logo=express&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)
 ![Sequelize](https://img.shields.io/badge/Sequelize-52B0E7?style=flat-square&logo=sequelize&logoColor=white)
+![Zod](https://img.shields.io/badge/Zod-3E67B1?style=flat-square&logo=zod&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-000000?style=flat-square&logo=jsonwebtokens&logoColor=white)
 ![Resend](https://img.shields.io/badge/Resend-000000?style=flat-square&logo=resend&logoColor=white)
 ![pnpm](https://img.shields.io/badge/pnpm_workspaces-F69220?style=flat-square&logo=pnpm&logoColor=white)
@@ -59,7 +60,7 @@ The front end and the API started in 2024 as two separate repositories. In 2026 
 
 That decision found a real bug. When editing a product, the web app sent `comparePrice` while the API expected `compare_price`, so **changes to the compare-at price were silently ignored**. Now `@haciendola/shared` defines the product fields, the page size, the length of the one-time code, the wait before asking for a new one and the demo account's email, and both apps read them from there.
 
-The shared package is plain CommonJS. The API loads it with `require()`, which Node 24 accepts for an ES module locally but Vercel's runtime doesn't: the first deploy crashed with `ERR_REQUIRE_ESM`. Vite converts the package for the web app, so both still read one file.
+**Both apps speak ES modules.** The API used to load the shared package with `require()`, which Node 24 accepts for an ES module locally but Vercel's runtime doesn't: the first deploy crashed with `ERR_REQUIRE_ESM`. The quick fix was to make the shared package CommonJS, until it started importing Zod: through CommonJS the bundler can't tell which parts of Zod are used, and the web app went from 118 KB to 223 KB gzipped, every language's error messages included. Moving the API to `import`/`export` let the package be an ES module again, and Zod now costs the web app 26 KB.
 
 ## More decisions
 
@@ -78,6 +79,8 @@ The shared package is plain CommonJS. The API loads it with `require()`, which N
 **A demo that skips the inbox.** The login screen opens with a **Try the demo** button that signs in to a shared demo account, so anyone reviewing the project sees the catalog in one click without handing over an email. Its catalog is shared by every visitor, so it goes back to the seed products when someone opens the demo more than 24 hours after the last reset, with no scheduled job. Signing in with an email is what gets you a private catalog.
 
 **Two ways to address a product.** Store teams think in SKUs and URLs think in handles, so `GET`, `PUT` and `DELETE /products/:product` accept either one. The API picks the column from the value (digits mean SKU), because comparing a handle with the numeric SKU column makes Postgres reject the query.
+
+**One set of rules, checked twice.** The Zod schemas live in the shared package: the API validates every request with them, and the product form checks itself with the same ones before sending, showing each problem under its field. A handle is lowercase letters, numbers and single dashes; SKU and price are required; amounts are whole numbers that fit their column and can't be negative; and the compare-at price has to be higher than the price. Numbers that arrive as strings are read as numbers, and empty optional fields are stored as `null`. An update only checks the fields it sends, so an edit never fails over one it didn't touch, but the compare-at price is checked against the price the product will have after the edit.
 
 **No barcode, no sale.** A product without a barcode is saved as disabled (`enabled: false`): a model hook sets the flag on every save, so it always follows the barcode. The card shows a **Disabled** badge, and the form says so under the barcode field.
 
@@ -117,7 +120,7 @@ haciendola/
 │           ├── scripts/      # Create the API's database role
 │           └── seeders/      # 263 seed products, copied into each test user's catalog
 ├── packages/
-│   └── shared/               # Product fields, page size, login code rules, demo email and API types (CommonJS)
+│   └── shared/               # Product fields, page size, login code rules, demo email, Zod schemas and API types
 └── pnpm-workspace.yaml
 ```
 
@@ -138,7 +141,7 @@ Base URL: `http://localhost:3000/api`
 | Method | Route | Description |
 |---|---|---|
 | `POST` | `/auth/otp` | Email a login code to `email`. An invalid email, or the demo account's, answers `400`; asking again within a minute answers `429` with `Retry-After` |
-| `POST` | `/auth/verify` | Check `otp` for `email` and return `{ token, email, accountExpiresAt }`, creating the account and its catalog on first login. A wrong, expired, used or locked code answers `401` |
+| `POST` | `/auth/verify` | Check `otp` for `email` and return `{ token, email, accountExpiresAt }`, creating the account and its catalog on first login. Something that isn't a 6-digit code answers `400` without using up a try; a wrong, expired, used or locked code answers `401` |
 | `POST` | `/auth/demo` | Return `{ token, email, accountExpiresAt: null }` for the shared demo account, no email needed |
 
 Every auth route is also limited by IP, per 15 minutes: 10 code requests, 30 verifications and 20 demo logins. Past the limit it answers `429`.
@@ -149,8 +152,8 @@ Every auth route is also limited by IP, per 15 minutes: 10 code requests, 30 ver
 |---|---|---|
 | `GET` | `/products?page=1` | Ten products per page, newest first, with `count`, `totalPages`, `next` and `prev`. A page past the last answers `404` |
 | `GET` | `/products/:product` | One product by SKU or handle |
-| `POST` | `/products` | Create a product. A handle, SKU or barcode already in the catalog answers `409` |
-| `PUT` | `/products/:product` | Update the fields sent, by SKU or handle. A handle, SKU or barcode already in the catalog answers `409` |
+| `POST` | `/products` | Create a product. Invalid fields answer `400` with the first problem, e.g. `Price is required`; a handle, SKU or barcode already in the catalog answers `409` |
+| `PUT` | `/products/:product` | Update the fields sent, by SKU or handle. Only those fields are validated (`400`), plus the compare-at price against the price it will be saved with; a handle, SKU or barcode already in the catalog answers `409` |
 | `DELETE` | `/products/:product` | Soft-delete a product by SKU or handle |
 
 Unknown products answer `404`, and a missing, invalid or expired token answers `401`. An empty catalog answers page 1 with no products. Each product comes with `enabled`, which is `false` when it has no barcode.
@@ -224,9 +227,8 @@ The second command prints the `haciendola_app` connection string for the API. Ru
 
 ## 🔭 What's next
 
-The first version was delivered in 2024. Moving to a monorepo fixed the configuration (API URL, ports), the field-name bug and the product lookup. These are the next steps:
+The first version was delivered in 2024. Moving to a monorepo fixed the configuration (API URL, ports), the field-name bug and the product lookup. Next step:
 
-- **Validate input** at the edge with Zod, reusing the shared package.
 - **Add tests** for the auth flow and the product endpoints.
 
 ## 👤 Author

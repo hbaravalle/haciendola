@@ -1,5 +1,5 @@
-const response = require("../network/response");
-const authService = require("../services/authService");
+import * as response from "../network/response.js";
+import * as authService from "../services/authService.js";
 
 function answerError(req, res, err) {
   if (err instanceof authService.AuthError) {
@@ -37,4 +37,4 @@ async function startDemo(req, res) {
   }
 }
 
-module.exports = { requestCode, verifyCode, startDemo };
+export { requestCode, verifyCode, startDemo };

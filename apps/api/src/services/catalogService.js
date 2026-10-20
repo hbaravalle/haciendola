@@ -1,5 +1,5 @@
-const { Product } = require("../models");
-const productListJSON = require("../seeders/products.json");
+import { Product } from "../models/index.js";
+import productListJSON from "../seeders/products.json" with { type: "json" };
 
 // The challenge's catalog, with its Shopify-style column names ("Compare
 // Price") turned into the model's fields (compare_price).
@@ -39,4 +39,4 @@ async function resetCatalog(user, { transaction } = {}) {
   await seedCatalog(user, { transaction });
 }
 
-module.exports = { seedCatalog, resetCatalog };
+export { seedCatalog, resetCatalog };

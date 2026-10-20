@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Modal } from "react-bootstrap";
 import { X } from "feather-icons-react";
-import { PRODUCT_FIELDS } from "@haciendola/shared";
+import { PRODUCT_FIELDS, errorsByField, productSchema } from "@haciendola/shared";
 import FormGroup from "../FormGroup";
 import styles from "./ProductFormModal.module.scss";
 
@@ -27,6 +27,8 @@ function ProductFormModal({ show, product, onClose, onSubmit }) {
   // While creating, the handle follows the title until it's edited by hand.
   const [handleTouched, setHandleTouched] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Problems found on the last save, by field, e.g. { price: "Price is required" }.
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (!show) return;
@@ -38,7 +40,17 @@ function ProductFormModal({ show, product, onClose, onSubmit }) {
     );
     setHandleTouched(Boolean(product));
     setSaving(false);
+    setErrors({});
   }, [show, product]);
+
+  // Editing a field clears its error (and the handle's, when the title fills
+  // it in; the compare-at price's, when the price it's checked against changes).
+  const clearErrors = (...fields) =>
+    setErrors((current) => {
+      const next = { ...current };
+      fields.forEach((field) => delete next[field]);
+      return next;
+    });
 
   const set = (field) => (e) => {
     const value = e.target.value;
@@ -48,16 +60,36 @@ function ProductFormModal({ show, product, onClose, onSubmit }) {
       return next;
     });
     if (field === "handle") setHandleTouched(true);
+    clearErrors(
+      field,
+      ...(field === "title" && !handleTouched ? ["handle"] : []),
+      ...(field === "price" ? ["compare_price"] : [])
+    );
   };
 
+  // Checked with the same rules the API applies, so mistakes show next to
+  // their field instead of coming back one at a time from the server.
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const parsed = productSchema.safeParse(values);
+    if (!parsed.success) {
+      const found = errorsByField(parsed.error);
+      setErrors(found);
+      const first = PRODUCT_FIELDS.find((name) => found[name]);
+      document.getElementById(first)?.focus();
+      return;
+    }
     setSaving(true);
-    const saved = await onSubmit(values);
+    const saved = await onSubmit(parsed.data);
     if (!saved) setSaving(false);
   };
 
-  const field = (name) => ({ name, value: values[name], onChange: set(name) });
+  const field = (name) => ({
+    name,
+    value: values[name],
+    onChange: set(name),
+    error: errors[name],
+  });
 
   return (
     <Modal
@@ -68,7 +100,7 @@ function ProductFormModal({ show, product, onClose, onSubmit }) {
       contentClassName={styles.modal}
       aria-labelledby="product-form-title"
     >
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} noValidate>
         <header className={styles.modal__header}>
           <div>
             <h2 id="product-form-title" className={styles.modal__title}>
@@ -91,7 +123,6 @@ function ProductFormModal({ show, product, onClose, onSubmit }) {
               title="Handle"
               required
               hint="Used in the product's URL. Lowercase letters, numbers and dashes."
-              pattern="[a-z0-9]+(-[a-z0-9]+)*"
               {...field("handle")}
             />
             <FormGroup title="Description" type="textarea" hint="HTML is allowed." {...field("description")} />

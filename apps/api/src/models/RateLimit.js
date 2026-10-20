@@ -1,4 +1,4 @@
-const { Model, DataTypes } = require("sequelize");
+import { Model, DataTypes } from "sequelize";
 
 // Requests counted for one key (limiter + IP) in the current window. Kept in
 // the database so every instance of the API shares the same counts: on
@@ -31,4 +31,4 @@ class RateLimit extends Model {
   }
 }
 
-module.exports = RateLimit;
+export default RateLimit;

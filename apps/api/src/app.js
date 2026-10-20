@@ -1,13 +1,13 @@
-require('dotenv').config();
-const path = require('path');
-const cors = require('cors');
-const express = require('express');
+import 'dotenv/config';
+import { fileURLToPath } from 'url';
+import cors from 'cors';
+import express from 'express';
 
-const productRoutes = require('./routes/productRoutes');
-const authRoutes = require('./routes/authRoutes');
-const cronRoutes = require('./routes/cronRoutes');
-const attachBaseUrl = require('./middlewares/attachBaseUrl');
-const response = require('./network/response');
+import productRoutes from './routes/productRoutes.js';
+import authRoutes from './routes/authRoutes.js';
+import cronRoutes from './routes/cronRoutes.js';
+import attachBaseUrl from './middlewares/attachBaseUrl.js';
+import * as response from './network/response.js';
 
 const app = express();
 
@@ -36,8 +36,8 @@ app.use('/api/products', productRoutes);
 app.use('/api/cron', cronRoutes);
 
 const FAVICONS = {
-  '/favicon.ico': path.join(__dirname, '../public/favicon.ico'),
-  '/favicon.svg': path.join(__dirname, '../public/favicon.svg'),
+  '/favicon.ico': fileURLToPath(new URL('../public/favicon.ico', import.meta.url)),
+  '/favicon.svg': fileURLToPath(new URL('../public/favicon.svg', import.meta.url)),
 };
 app.get(Object.keys(FAVICONS), (req, res) => {
   res.set('Cache-Control', 'public, max-age=604800');
@@ -48,4 +48,4 @@ app.use((req, res) => {
   return response.error(req, res, 'Not found', 404);
 });
 
-module.exports = app;
+export default app;
