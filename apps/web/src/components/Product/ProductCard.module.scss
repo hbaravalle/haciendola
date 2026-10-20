@@ -28,6 +28,20 @@
     font-variant-numeric: tabular-nums;
   }
 
+  &__badges {
+    display: flex;
+    gap: 0.35rem;
+  }
+
+  // Same height as the stock pill: the border takes the place of 1px of padding.
+  &__disabled {
+    padding: calc(0.1rem - 1px) calc(0.5rem - 1px);
+    border: 1px solid $color-border;
+    border-radius: 999px;
+    color: $color-text-muted;
+    font-weight: 500;
+  }
+
   &__stock {
     padding: 0.1rem 0.5rem;
     border-radius: 999px;

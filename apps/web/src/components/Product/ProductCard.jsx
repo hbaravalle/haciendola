@@ -13,12 +13,23 @@ function ProductCard({ product, handleShowEditModal, handleShowDeleteModal }) {
     <article className={styles.productCard}>
       <div className={styles.productCard__topSection}>
         <span className={styles.productCard__id}>#{product.id}</span>
-        <span
-          className={classNames(styles.productCard__stock, {
-            [styles["productCard__stock--out"]]: outOfStock,
-          })}
-        >
-          {outOfStock ? "Out of stock" : `${product.stock} in stock`}
+        <span className={styles.productCard__badges}>
+          {/* The API disables every product without a barcode. */}
+          {!product.enabled && (
+            <span
+              className={styles.productCard__disabled}
+              title="Products without a barcode are disabled"
+            >
+              Disabled
+            </span>
+          )}
+          <span
+            className={classNames(styles.productCard__stock, {
+              [styles["productCard__stock--out"]]: outOfStock,
+            })}
+          >
+            {outOfStock ? "Out of stock" : `${product.stock} in stock`}
+          </span>
         </span>
       </div>
 
