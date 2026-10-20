@@ -20,5 +20,11 @@ export const NUMERIC_PRODUCT_FIELDS = ['sku', 'grams', 'stock', 'price', 'compar
 
 export const PAGE_SIZE = 10;
 
-// Length of the one-time code emailed to reset a password.
+// Number of digits in the one-time code emailed to log in.
 export const OTP_LENGTH = 6;
+
+// Seconds to wait before asking for another code for the same email.
+export const OTP_RESEND_SECONDS = 60;
+
+// Shared account behind the "Try the demo" button. Its catalog resets daily.
+export const DEMO_EMAIL = 'demo@demos.hernanbaravalle.com';

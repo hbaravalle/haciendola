@@ -1,129 +1,40 @@
 const response = require("../network/response");
-const userService = require("../services/userService");
-const nodemailer = require("nodemailer");
+const authService = require("../services/authService");
 
-const optGenerator = require("otp-generator");
-const { OTP_LENGTH } = require("@haciendola/shared");
-const { User } = require("../models");
+function answerError(req, res, err) {
+  if (err instanceof authService.AuthError) {
+    if (err.extra.retryAfter) res.set("Retry-After", String(err.extra.retryAfter));
+    return response.error(req, res, err.message, err.status);
+  }
+  console.error(err);
+  return response.error(req, res);
+}
 
-const jwt = require("jsonwebtoken");
-
-async function login(req, res) {
+async function requestCode(req, res) {
   try {
-    const user = await userService.find(req.body.user);
-    if (user && (await user.validatePassword(req.body.password))) {
-      const token = jwt.sign(
-        { sub: user.id, iat: Date.now() },
-        process.env.JWT_SECRET
-      );
-      return response.success(req, res, { token, email: user.email }, 200);
-    } else {
-      return response.error(req, res, "Invalid credentials", 404);
-    }
+    await authService.requestCode(req.body.email);
+    return response.success(req, res, "Code sent", 200);
   } catch (err) {
-    console.log(err);
-    return response.error(req, res);
+    return answerError(req, res, err);
   }
 }
 
-async function register(req, res) {
+async function verifyCode(req, res) {
   try {
-    console.log(req.body);
-    await userService.create(req.body);
-    return response.success(req, res, "User registered", 201);
+    const session = await authService.verifyCode(req.body.email, req.body.otp);
+    return response.success(req, res, session, 200);
   } catch (err) {
-    console.log(err);
-    return response.error(req, res, "Cannot create user", 500);
+    return answerError(req, res, err);
   }
 }
 
-async function sendOTP(req, res) {
-  const otp = optGenerator.generate(OTP_LENGTH, {
-    lowerCaseAlphabets: false,
-    upperCaseAlphabets: true,
-    specialChars: false,
-  });
-  const email = req.body.email;
-
+async function startDemo(req, res) {
   try {
-    const user = await User.findOne({
-      where: {
-        email: email,
-      },
-    });
-
-    if (!user) return response.error(req, res, "Email not found", 404);
-
-    const transporter = nodemailer.createTransport({
-      name: "test.com",
-      host: "sandbox.smtp.mailtrap.io",
-      port: 2525,
-      secure: false,
-      auth: {
-        user: process.env.NODEMAILER_USER,
-        pass: process.env.NODEMAILER_PASS,
-      },
-      debug: true,
-    });
-
-    const mailOptions = {
-      from: process.env.NODEMAILER_FROM,
-      to: email,
-      subject: "Password reset",
-      text: `Your OTP code to reset your password is: ${otp}.\nIf you did not request this code, please ignore this email.`,
-    };
-
-    const info = await transporter.sendMail(mailOptions);
-    user.otp = otp;
-    await user.save();
-    return response.success(req, res, "ok", 200);
+    const session = await authService.startDemoSession();
+    return response.success(req, res, session, 200);
   } catch (err) {
-    console.error(err);
-    return response.error(req, res, "Server error", 500);
+    return answerError(req, res, err);
   }
 }
 
-async function checkOTP(req, res) {
-  try {
-    console.log(req.body);
-    const user = await User.findOne({
-      where: { email: req.body.email },
-    });
-    if (user.otp === req.body.otp && user.email === req.body.email) {
-      return response.success(req, res, "ok", 200);
-    } else {
-      return response.error(req, res, "Invalid code", 401);
-    }
-  } catch (err) {
-    console.log(err);
-    return response.error(req, res);
-  }
-}
-
-async function resetPassword(req, res) {
-  try {
-    const user = await User.findOne({
-      where: {
-        email: req.body.email,
-      },
-    });
-    if (!user) {
-      return response.error(req, res, "Email not found", 404);
-    }
-    if (user.otp !== req.body.otp) {
-      return response.error(req, res, "Invalid code", 401);
-    }
-
-    user.password = req.body.newPassword;
-    user.otp = null;
-
-    await user.save();
-
-    return response.success(req, res, "User updated", 200);
-  } catch (err) {
-    console.log(err);
-    return response.error(req, res);
-  }
-}
-
-module.exports = { login, register, sendOTP, checkOTP, resetPassword };
+module.exports = { requestCode, verifyCode, startDemo };

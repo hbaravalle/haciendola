@@ -1,33 +1,31 @@
 const { Model, DataTypes } = require("sequelize");
-const bcrypt = require("bcryptjs");
 
 class User extends Model {
   static initModel(sequelize) {
     User.init(
       {
         id: {
-          type: DataTypes.BIGINT.UNSIGNED,
+          type: DataTypes.BIGINT,
           primaryKey: true,
           autoIncrement: true,
         },
         name: {
           type: DataTypes.STRING(100),
         },
-        username: {
-          type: DataTypes.STRING(100),
-          allowNull: false,
-          unique: true,
-        },
+        // The email is the user's identity: the login code is sent there.
+        // Stored lowercased so lookups don't depend on how it was typed.
         email: {
-          type: DataTypes.STRING(100),
-          unique: true,
-        },
-        password: {
-          type: DataTypes.STRING(100),
+          type: DataTypes.STRING(254),
           allowNull: false,
+          unique: true,
+          validate: { isEmail: true },
+          set(value) {
+            this.setDataValue("email", String(value).trim().toLowerCase());
+          },
         },
-        otp: {
-          type: DataTypes.STRING(6),
+        // When the user's catalog was last filled with the seed products.
+        catalog_seeded_at: {
+          type: DataTypes.DATE,
         },
       },
       {
@@ -36,27 +34,8 @@ class User extends Model {
         timestamps: true,
         underscored: true,
         paranoid: true,
-        hooks: {
-          beforeSave: (user) => {
-            if (user.changed("password")) {
-              const hashedPassword = bcrypt.hashSync(
-                user.password,
-                bcrypt.genSaltSync(10)
-              );
-              user.password = hashedPassword;
-            }
-          },
-        },
       }
     );
-
-    User.prototype.validatePassword = async function (password) {
-      try {
-        return await bcrypt.compare(password, this.password);
-      } catch (error) {
-        throw new Error("Error validating password");
-      }
-    };
 
     return User;
   }

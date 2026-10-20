@@ -12,12 +12,16 @@ export declare const PRODUCT_FIELDS: readonly [
 export declare const NUMERIC_PRODUCT_FIELDS: readonly ['sku', 'grams', 'stock', 'price', 'compare_price', 'barcode'];
 export declare const PAGE_SIZE: number;
 export declare const OTP_LENGTH: number;
+export declare const OTP_RESEND_SECONDS: number;
+export declare const DEMO_EMAIL: string;
 
 export type ProductField = (typeof PRODUCT_FIELDS)[number];
 
 /** A product as returned by the API. */
 export interface Product {
   id: number;
+  /** Owner of the catalog the product belongs to. */
+  user_id: number;
   handle: string;
   title: string;
   description: string | null;
@@ -43,6 +47,14 @@ export interface ApiSuccess<T> {
 export interface ApiError {
   status: number;
   message: string;
+}
+
+/** `result` of POST /api/auth/verify. */
+export interface Session {
+  token: string;
+  email: string;
+  /** When the account and its catalog are deleted. Null for the demo account. */
+  accountExpiresAt: string | null;
 }
 
 /** `result` of GET /api/products. */

@@ -1,29 +1,30 @@
 {
   "name": "api",
   "version": "1.0.0",
-  "description": "Haciendola REST API: JWT auth, password reset by one-time code and paginated products over MySQL.",
+  "description": "Haciendola REST API: passwordless login by emailed code, JWT sessions and paginated products over PostgreSQL.",
   "main": "src/server.js",
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "db-init": "node src/scripts/createDatabase.js && node src/seeders/runAllSeeders.js",
-    "seeders": "node src/seeders/runAllSeeders.js"
+    "db-init": "node src/seeders/runAllSeeders.js",
+    "seeders": "node src/seeders/runAllSeeders.js",
+    "db-app-role": "node src/scripts/createAppRole.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "bcryptjs": "^2.4.3",
+    "@haciendola/shared": "workspace:*",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-jwt": "^8.4.1",
+    "express-rate-limit": "^8.7.1",
     "jsonwebtoken": "^9.0.2",
-    "mysql2": "^3.9.7",
-    "nodemailer": "^6.9.13",
-    "otp-generator": "^4.0.1",
-    "sequelize": "^6.37.3",
-    "@haciendola/shared": "workspace:*"
+    "pg": "^8.23.1",
+    "pg-hstore": "^2.3.4",
+    "resend": "^6.34.1",
+    "sequelize": "^6.37.3"
   },
   "engines": {
     "node": ">=20.19"
