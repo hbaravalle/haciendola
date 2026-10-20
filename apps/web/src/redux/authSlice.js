@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { loadSession } from "./session";
 
-const initialState = {
+const signedOut = {
   token: null,
   email: null,
   // When the account and its catalog are deleted (ISO date), null for the demo.
@@ -11,7 +12,8 @@ const initialState = {
 
 const authSlice = createSlice({
   name: "auth",
-  initialState,
+  // A session saved before the last reload, if it's still valid.
+  initialState: () => ({ ...signedOut, ...loadSession() }),
   reducers: {
     login: (state, action) => {
       state.token = action.payload.token;
@@ -19,7 +21,7 @@ const authSlice = createSlice({
       state.accountExpiresAt = action.payload.accountExpiresAt ?? null;
       state.pendingEmail = null;
     },
-    logout: () => initialState,
+    logout: () => signedOut,
     setPendingEmail: (state, action) => {
       state.pendingEmail = action.payload;
     },

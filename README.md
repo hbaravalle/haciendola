@@ -96,8 +96,8 @@ haciendola/
 │   │   ├── public/           # Favicons and logo
 │   │   └── src/
 │   │       ├── config.js     # API base URL (VITE_API_URL)
-│   │       ├── redux/        # Store, auth slice (session, account expiry, email waiting for its code)
-│   │       │                 # and the RTK Query API slice (every request to the API)
+│   │       ├── redux/        # Store, auth slice (session, account expiry, email waiting for its code),
+│   │       │                 # the session kept across reloads and the RTK Query API slice
 │   │       ├── pages/        # Login (demo, email and code steps), ProductList
 │   │       ├── components/   # ProductCard and its skeleton, ProductFormModal, DeleteProductModal,
 │   │       │                 # FormGroup, FormGroupOTP, Paginate, Sidebar, ProtectedRoute
@@ -124,6 +124,8 @@ haciendola/
 **Global state only where it's shared.** Redux Toolkit holds the session (token, email and when the account is deleted), which the routes, the sidebar and every API call need. Everything else, such as the current page and the modals, stays local to the page that uses it.
 
 **Server data in RTK Query.** Every request goes through one API slice, which adds the token, unwraps the API's `{ status, result }` answers and signs the user out on a `401` from an expired session. Pages are cached per page number and tagged as one list, so creating, editing or deleting a product refetches the page on screen and drops the rest, and an answer for a page you already left never reaches the screen. When the session changes, the cache is emptied, since every account has its own catalog.
+
+**A session that survives a reload.** The session is kept in `localStorage`, and a token that expired while the tab was closed is dropped on load instead of failing on the first request. Signing in or out in one tab does the same in the others. An `httpOnly` cookie would keep the token out of reach of scripts, but the web app and the API live on different `vercel.app` subdomains, where browsers block that cookie as third-party; sessions last 24 hours at most (7 days for the demo), which keeps the trade-off small. If storage is blocked, the app still works and only forgets the session on reload.
 
 **Layers in the API.** Routes map URLs and apply authentication, controllers deal with HTTP and pick the status code, services hold the login, catalog and cleanup rules, and one helper (`network/response.js`) gives every success (`{ status, result }`) and error (`{ status, message }`) the same shape.
 
@@ -225,7 +227,6 @@ The second command prints the `haciendola_app` connection string for the API. Ru
 The first version was delivered in 2024. Moving to a monorepo fixed the configuration (API URL, ports), the field-name bug and the product lookup. These are the next steps:
 
 - **Validate input** at the edge with Zod, reusing the shared package.
-- **Keep the session across reloads** by persisting the token. Today a reload signs you out.
 - **Add tests** for the auth flow and the product endpoints.
 
 ## 👤 Author
